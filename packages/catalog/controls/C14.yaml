@@ -1,0 +1,11 @@
+id: C14
+nis2: "21(2)(d)"
+domain: supply_chain
+title: Third-party apps with high Graph permissions are identified
+requires: {scopes: [DelegatedPermissionGrant.Read.All], licence: none}
+queries:
+  grants: {endpoint: "/v1.0/oauth2PermissionGrants?$select=clientId,scope,consentType", paged: true}
+handler: high_privilege_apps
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/enterprise-apps/manage-consent-requests
+limits: Detects selected delegated high-privilege scopes only. It does not evaluate application permissions or whether an app is externally supplied.

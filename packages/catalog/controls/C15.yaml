@@ -1,0 +1,11 @@
+id: C15
+nis2: "21(2)(d)"
+domain: supply_chain
+title: User consent for applications is restricted
+requires: {scopes: [Policy.Read.All], licence: none}
+queries:
+  authorization: {endpoint: /v1.0/policies/authorizationPolicy, paged: false}
+handler: user_consent
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/enterprise-apps/configure-user-consent
+limits: Evaluates the default user-consent policy only; administrator consent and consent workflow operation are outside this check.

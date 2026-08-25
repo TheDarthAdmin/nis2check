@@ -1,0 +1,11 @@
+id: C07
+nis2: "21(2)(i)"
+domain: access_management
+title: Guest invitations are restricted
+requires: {scopes: [Policy.Read.All], licence: none}
+queries:
+  authorization: {endpoint: /v1.0/policies/authorizationPolicy, paged: false}
+handler: guest_access
+params: {}
+remediation: https://learn.microsoft.com/entra/external-id/external-collaboration-settings-configure
+limits: Evaluates the tenant-wide invitation setting, not individual guest memberships or access reviews.

@@ -1,0 +1,11 @@
+id: C04
+nis2: "21(2)(j)"
+domain: authentication
+title: Per-user MFA remnants are identified
+requires: {scopes: [User.Read.All], licence: entra_p1}
+queries:
+  users: {endpoint: "/beta/users?$select=id,perUserMfaState", paged: true}
+handler: per_user_mfa_remainder
+params: {max_users: 5000}
+remediation: https://learn.microsoft.com/entra/identity/authentication/howto-mfa-userstates
+limits: Uses a beta Graph property and stops at the configured user cap; it is therefore not a complete tenant inventory for large tenants.

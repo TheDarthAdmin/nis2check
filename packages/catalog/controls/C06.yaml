@@ -1,0 +1,11 @@
+id: C06
+nis2: "21(2)(i)"
+domain: access_management
+title: Emergency access accounts are excluded from Conditional Access
+requires: {scopes: [Policy.Read.All], licence: entra_p1}
+queries:
+  policies: {endpoint: /v1.0/identity/conditionalAccess/policies, paged: true}
+handler: break_glass_exclusions
+params: {minimum_accounts: 2}
+remediation: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+limits: Finds excluded object IDs only. It cannot determine whether they are legitimate, secured break-glass accounts.

@@ -1,0 +1,11 @@
+id: C03
+nis2: "21(2)(j)"
+domain: authentication
+title: Legacy authentication is blocked
+requires: {scopes: [Policy.Read.All], licence: entra_p1}
+queries:
+  policies: {endpoint: /v1.0/identity/conditionalAccess/policies, paged: true}
+handler: ca_block_legacy_auth
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/conditional-access/policy-block-legacy-authentication
+limits: Detects Conditional Access policies only; it cannot detect protocol exceptions outside Conditional Access.

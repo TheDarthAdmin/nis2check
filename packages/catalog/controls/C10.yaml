@@ -1,0 +1,11 @@
+id: C10
+nis2: "21(2)(g)"
+domain: devices
+title: Update rings set a deadline
+requires: {scopes: [DeviceManagementConfiguration.Read.All], licence: intune}
+queries:
+  rings: {endpoint: /beta/deviceManagement/deviceConfigurations, paged: true}
+handler: update_rings
+params: {}
+remediation: https://learn.microsoft.com/mem/intune/protect/windows-update-for-business-configure
+limits: Detects a configured feature-update deadline but cannot prove timely installation on every endpoint.

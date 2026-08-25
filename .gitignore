@@ -7,6 +7,9 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.next/
+node_modules/
+.env.local
 
 # Local credentials and MSAL delegated-token cache
 .env

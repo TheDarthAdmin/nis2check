@@ -1,0 +1,11 @@
+id: C13
+nis2: "21(2)(b)"
+domain: incident_response
+title: Security contact addresses are configured
+requires: {scopes: [Organization.Read.All], licence: none}
+queries:
+  organization: {endpoint: "/v1.0/organization?$select=id,securityComplianceNotificationMails", paged: true}
+handler: security_contact
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+limits: Confirms that one or more contact addresses are configured, not their ownership, monitoring, or escalation process.

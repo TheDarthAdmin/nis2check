@@ -1,0 +1,11 @@
+id: C11
+nis2: "21(2)(g)"
+domain: devices
+title: Attack surface reduction rules use block mode
+requires: {scopes: [DeviceManagementConfiguration.Read.All], licence: intune}
+queries:
+  profiles: {endpoint: /beta/deviceManagement/deviceConfigurations, paged: true}
+handler: asr_rules
+params: {}
+remediation: https://learn.microsoft.com/defender-endpoint/attack-surface-reduction-rules-deployment
+limits: Graph profile shapes vary by policy type. Rules not returned in the queried profile shape are not evaluated.

@@ -1,0 +1,11 @@
+id: C09
+nis2: "21(2)(g)"
+domain: devices
+title: Managed devices are encrypted and compliant
+requires: {scopes: [DeviceManagementManagedDevices.Read.All], licence: intune}
+queries:
+  devices: {endpoint: "/beta/deviceManagement/managedDevices?$select=id,isEncrypted,complianceState", paged: true}
+handler: device_encryption
+params: {}
+remediation: https://learn.microsoft.com/mem/intune/protect/encrypt-devices
+limits: Reports Intune managed-device state; it does not verify encryption on unmanaged or unsupported devices.

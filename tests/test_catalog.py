@@ -7,7 +7,7 @@ from nis2check_catalog import CatalogValidationError, load_catalog, load_control
 def test_loads_c01_catalogue() -> None:
     controls = load_catalog(Path("packages/catalog/controls"))
 
-    assert [control.id for control in controls] == ["C01"]
+    assert [control.id for control in controls] == [f"C{number:02d}" for number in range(1, 16)]
     assert controls[0].queries["policies"].paged is True
 
 

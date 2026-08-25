@@ -1,0 +1,11 @@
+id: C02
+nis2: "21(2)(j)"
+domain: authentication
+title: Administrators use phishing-resistant authentication
+requires: {scopes: [Policy.Read.All], licence: entra_p1}
+queries:
+  policies: {endpoint: /v1.0/identity/conditionalAccess/policies, paged: true}
+handler: ca_phishing_resistant_admins
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/authentication/concept-authentication-strengths
+limits: Detects an enabled phishing-resistant Conditional Access policy but cannot prove its administrator scope without privileged-role correlation.

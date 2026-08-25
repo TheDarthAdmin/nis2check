@@ -1,0 +1,12 @@
+id: C05
+nis2: "21(2)(i)"
+domain: access_management
+title: Global Administrator assignments are limited
+requires: {scopes: [RoleManagement.Read.Directory], licence: entra_p2}
+queries:
+  standing: {endpoint: /v1.0/directoryRoles(roleTemplateId='62e90394-69f5-4237-9190-012177145e10')/members, paged: true}
+  eligible: {endpoint: "/beta/roleManagement/directory/roleEligibilityScheduleInstances?$filter=roleDefinitionId%20eq%20'62e90394-69f5-4237-9190-012177145e10'", paged: true}
+handler: global_admin_count
+params: {maximum_standing: 4}
+remediation: https://learn.microsoft.com/entra/identity/role-based-access-control/privileged-identity-management/pim-configure
+limits: Counts current assignments only; it cannot assess whether each assignment is justified.

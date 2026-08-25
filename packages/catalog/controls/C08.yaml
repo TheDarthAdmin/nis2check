@@ -1,0 +1,11 @@
+id: C08
+nis2: "21(2)(i)"
+domain: access_management
+title: Inactive accounts older than 90 days are identified
+requires: {scopes: [AuditLog.Read.All, User.Read.All], licence: entra_p1}
+queries:
+  users: {endpoint: "/beta/users?$select=id,accountEnabled,signInActivity", paged: true}
+handler: inactive_accounts
+params: {days: 90}
+remediation: https://learn.microsoft.com/entra/identity/monitoring-health/howto-manage-inactive-user-accounts
+limits: Requires Entra P1 sign-in data. A 403 is reported as INCONCLUSIVE; accounts without a recorded interactive sign-in are not treated as inactive automatically.

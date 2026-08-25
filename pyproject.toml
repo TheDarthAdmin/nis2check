@@ -10,13 +10,25 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "httpx>=0.27,<1",
+  "Jinja2>=3.1,<4",
   "jsonschema>=4.23,<5",
   "msal>=1.30,<2",
   "pydantic>=2.8,<3",
   "PyYAML>=6.0,<7",
+  "typer>=0.12,<1",
 ]
 
+[project.scripts]
+nis2check = "nis2check_cli.main:app"
+
 [project.optional-dependencies]
+hosted = [
+  "alembic>=1.13,<2",
+  "arq>=0.26,<1",
+  "asyncpg>=0.29,<1",
+  "fastapi>=0.115,<1",
+  "SQLAlchemy>=2.0,<3",
+]
 dev = [
   "mypy>=1.11,<2",
   "pytest>=8.3,<9",
@@ -28,7 +40,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["packages/collector", "packages/catalog"]
+where = ["packages/collector", "packages/catalog", "apps/cli", "apps/api"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -41,6 +53,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
