@@ -1,0 +1,8 @@
+{
+  "value": [{
+    "id": "fixture-policy-partial",
+    "state": "enabled",
+    "conditions": {"users": {"includeUsers": ["All"]}, "applications": {"includeApplications": ["app-a"]}},
+    "grantControls": {"builtInControls": ["mfa"]}
+  }]
+}

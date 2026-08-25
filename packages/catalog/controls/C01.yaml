@@ -1,0 +1,18 @@
+id: C01
+nis2: "21(2)(j)"
+domain: authentication
+title: Conditional Access requires MFA for all users
+requires:
+  scopes: [Policy.Read.All]
+  licence: none
+queries:
+  policies:
+    endpoint: /v1.0/identity/conditionalAccess/policies
+    paged: true
+handler: ca_mfa_all_users
+params:
+  require_all_apps: true
+remediation: https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength
+limits: >
+  Detects the presence and scope of a policy. It cannot tell whether the excluded accounts
+  are legitimate break-glass accounts.

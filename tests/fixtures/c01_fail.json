@@ -1,0 +1,8 @@
+{
+  "value": [{
+    "id": "fixture-policy-fail",
+    "state": "enabled",
+    "conditions": {"users": {"includeUsers": ["group-a"]}, "applications": {"includeApplications": ["All"]}},
+    "grantControls": {"builtInControls": ["compliantDevice"]}
+  }]
+}

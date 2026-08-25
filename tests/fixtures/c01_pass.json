@@ -1,0 +1,8 @@
+{
+  "value": [{
+    "id": "fixture-policy-pass",
+    "state": "enabled",
+    "conditions": {"users": {"includeUsers": ["All"]}, "applications": {"includeApplications": ["All"]}},
+    "grantControls": {"builtInControls": ["mfa"]}
+  }]
+}

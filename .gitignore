@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Local credentials and MSAL delegated-token cache
+.env
+.env.*
+!*.env.example
+*.msal-cache.json
