@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import hmac
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -96,6 +96,17 @@ async def create_run(
     session: AsyncSession, settings: Settings, source: str = "manual"
 ) -> dict[str, object]:
     tenant = await ensure_tenant(session, settings)
+    if source == "scheduled":
+        today = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
+        existing = await session.scalar(
+            select(Run).where(
+                Run.tenant_id == tenant.id,
+                Run.source == "scheduled",
+                Run.created_at >= today,
+            )
+        )
+        if existing is not None:
+            raise ActiveRunError("Today's scheduled tenant collection has already run.")
     run = Run(tenant_id=tenant.id, status="RUNNING", source=source, collector_version="0.1.0")
     session.add(run)
     try:

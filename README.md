@@ -84,17 +84,25 @@ prevents overlapping runs for the tenant.
 7. For tighter access control, assign users/groups to the Enterprise application and set
    **Assignment required?** to Yes.
 
-### Deployment
+### Cloud deployment
 
-Provision a PostgreSQL database (for example through the Neon Vercel Marketplace integration).
-Deploy `apps/api/Dockerfile` to a container host that supports long-running HTTP requests, then
-set its public HTTPS URL as `NIS2CHECK_API_URL` in the Vercel web project. The API needs its own
-environment values from `apps/api/.env.example`; the web project needs `.env.example`. The two
-projects must share the same `NIS2CHECK_API_KEY`, but all other generated secrets must be
-different.
+The hosted product uses no customer-operated containers. Deploy the same repository to two
+managed Vercel projects:
 
-The API creates its schema on first start. For local development, copy `apps/api/.env.example`
-to `apps/api/.env`, then run:
+1. Keep this `nis2tool` project as the **Next.js web** project.
+2. Create `nis2tool-api` as a second Vercel project from the same repository. Set its Framework
+   Preset to **FastAPI** and leave its Root Directory at the repository root. The Python
+   entrypoint and dependency build command are declared in `pyproject.toml`.
+3. Provision a Neon PostgreSQL database and set the API project URL as `NIS2CHECK_API_URL` in
+   the web project. The API creates its schema at its first start.
+
+The API needs `apps/api/.env.example`; the web project needs `.env.example`. Both projects share
+`NIS2CHECK_API_KEY` and `CRON_SECRET`, but every other generated secret must differ. The source
+includes a protected daily schedule. If both Vercel projects receive the schedule from the shared
+`vercel.json`, the API records at most one scheduled run per UTC day.
+
+Docker remains an optional on-prem/self-host deployment path. For local development, copy
+`apps/api/.env.example` to `apps/api/.env`, then run:
 
 ```powershell
 docker compose up --build
@@ -109,7 +117,7 @@ In Vercel, configure the following production variables:
 | `ENTRA_CLIENT_ID` | Application (client) ID |
 | `ENTRA_CLIENT_SECRET` | Client secret **value** |
 | `AUTH_SECRET` | Random value: `openssl rand -base64 48` |
-| `NIS2CHECK_API_URL` | Public base URL of the deployed hosted API |
+| `NIS2CHECK_API_URL` | Public base URL of the `nis2tool-api` Vercel project |
 | `NIS2CHECK_API_KEY` | Same random API key used by the API deployment |
 | `CRON_SECRET` | Separate random value protecting the Vercel cron route |
 

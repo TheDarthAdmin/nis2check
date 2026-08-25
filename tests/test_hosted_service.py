@@ -10,6 +10,7 @@ def test_evidence_summary_stores_only_counts_and_keyed_pseudonyms() -> None:
         client_secret="fixture-secret",
         api_key="a" * 32,
         evidence_hash_key="b" * 32,
+        cron_secret="c" * 32,
     )
 
     object_ids, counts = evidence_summary(
@@ -36,6 +37,7 @@ def test_settings_translate_neon_database_url_for_asyncpg() -> None:
         client_secret="fixture-secret",
         api_key="a" * 32,
         evidence_hash_key="b" * 32,
+        cron_secret="c" * 32,
     )
 
     assert settings.sqlalchemy_database_url == (

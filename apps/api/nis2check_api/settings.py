@@ -12,6 +12,7 @@ class Settings:
     client_secret: str
     api_key: str
     evidence_hash_key: str
+    cron_secret: str
 
     @property
     def sqlalchemy_database_url(self) -> str:
@@ -31,6 +32,7 @@ def get_settings() -> Settings:
         "NIS2CHECK_CLIENT_SECRET",
         "NIS2CHECK_API_KEY",
         "EVIDENCE_HASH_KEY",
+        "CRON_SECRET",
     )
     missing = [key for key in required if not environ.get(key)]
     if missing:
@@ -44,4 +46,5 @@ def get_settings() -> Settings:
         client_secret=environ["NIS2CHECK_CLIENT_SECRET"],
         api_key=environ["NIS2CHECK_API_KEY"],
         evidence_hash_key=environ["EVIDENCE_HASH_KEY"],
+        cron_secret=environ["CRON_SECRET"],
     )

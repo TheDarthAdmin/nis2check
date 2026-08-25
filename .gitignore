@@ -18,3 +18,4 @@ node_modules/
 *.msal-cache.json
 
 .vercel
+.neon

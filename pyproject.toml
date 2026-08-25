@@ -62,6 +62,13 @@ strict = true
 packages = ["nis2check_collector", "nis2check_catalog"]
 mypy_path = "packages/collector:packages/catalog"
 
+[tool.vercel]
+# Used only by the separate Vercel project whose Framework Preset is FastAPI.
+entrypoint = "apps.api.nis2check_api.main:app"
+
+[tool.vercel.scripts]
+build = "python -m pip install '.[hosted]'"
+
 [[tool.mypy.overrides]]
 module = ["msal"]
 ignore_missing_imports = true

@@ -79,6 +79,20 @@ async def start_run(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(error)) from error
 
 
+@app.get("/api/cron")
+async def start_vercel_cron(
+    request: Request, database_session: Annotated[AsyncSession, Depends(session)]
+) -> dict[str, object]:
+    if request.headers.get("authorization") != f"Bearer {settings(request).cron_secret}":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized.")
+    try:
+        return await create_run(database_session, settings(request), "scheduled")
+    except ActiveRunError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+    except CollectionError as error:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(error)) from error
+
+
 @app.get("/v1/runs/{run_id}", dependencies=[Depends(authorize)])
 async def read_run(
     request: Request, run_id: UUID, database_session: Annotated[AsyncSession, Depends(session)]
