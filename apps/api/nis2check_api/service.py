@@ -1,0 +1,232 @@
+"""Hosted orchestration: app-only Graph access, pseudonymous persistence, and reads."""
+
+import asyncio
+import hashlib
+import hmac
+from collections.abc import Iterable
+from datetime import UTC, datetime
+from importlib.metadata import version
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
+from nis2check_catalog import load_catalog
+from nis2check_collector.auth import MsalAuthenticator
+from nis2check_collector.engine import CollectorEngine
+from nis2check_collector.graph import AsyncGraphClient
+from nis2check_collector.models import Finding, RunResult
+from sqlalchemy import Select, desc, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .models import FindingRecord, Organization, Run, Tenant
+from .settings import Settings
+
+ROOT = Path(__file__).resolve().parents[3]
+CATALOGUE = ROOT / "packages" / "catalog" / "controls"
+class ActiveRunError(RuntimeError):
+    """A collection is already in progress for this hosted tenant."""
+
+
+class CollectionError(RuntimeError):
+    """The app-only credential could not collect the tenant evidence."""
+
+
+async def ensure_tenant(session: AsyncSession, settings: Settings) -> Tenant:
+    tenant = await session.scalar(select(Tenant).where(Tenant.entra_tenant_id == settings.tenant_id))
+    if tenant is not None:
+        return tenant
+    organization = Organization(name="Hosted tenant")
+    session.add(organization)
+    await session.flush()
+    tenant = Tenant(organization_id=organization.id, entra_tenant_id=settings.tenant_id)
+    session.add(tenant)
+    await session.flush()
+    return tenant
+
+
+def _pseudonymize(value: str, settings: Settings) -> str:
+    digest = hmac.new(
+        settings.evidence_hash_key.encode("utf-8"), value.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return f"hmac-sha256:{digest}"
+
+
+def _id_values(value: object, key: str | None = None) -> Iterable[str]:
+    if isinstance(value, dict):
+        for child_key, child_value in value.items():
+            yield from _id_values(child_value, child_key)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _id_values(item, key)
+    elif (
+        isinstance(value, str)
+        and key is not None
+        and (key.lower().endswith("id") or key.lower() == "excludeusers")
+    ):
+        yield value
+
+
+def evidence_summary(raw_evidence: dict[str, Any], settings: Settings) -> tuple[list[str], dict[str, int]]:
+    """Keep counts and keyed pseudonyms; raw Graph payloads never enter the database."""
+    object_ids = sorted({_pseudonymize(value, settings) for value in _id_values(raw_evidence)})
+    counts = {
+        name: len(value)
+        for name, value in raw_evidence.items()
+        if isinstance(value, list)
+    }
+    return object_ids, counts
+
+
+async def _collect(settings: Settings) -> RunResult:
+    try:
+        token = await asyncio.to_thread(
+            MsalAuthenticator(settings.tenant_id, settings.client_id).acquire_client_secret_token,
+            settings.client_secret,
+        )
+    except Exception as error:
+        raise CollectionError("Unable to acquire the Microsoft Graph application token.") from error
+    async with AsyncGraphClient(token) as graph:
+        return await CollectorEngine(graph, version("nis2check")).run(
+            settings.tenant_id, load_catalog(CATALOGUE)
+        )
+
+
+async def create_run(
+    session: AsyncSession, settings: Settings, source: str = "manual"
+) -> dict[str, object]:
+    tenant = await ensure_tenant(session, settings)
+    run = Run(tenant_id=tenant.id, status="RUNNING", source=source, collector_version="0.1.0")
+    session.add(run)
+    try:
+        await session.commit()
+    except IntegrityError as error:
+        await session.rollback()
+        raise ActiveRunError("A tenant collection is already in progress.") from error
+    await session.refresh(run)
+    try:
+        result = await _collect(settings)
+    except CollectionError:
+        run.status = "FAILED"
+        run.failure_reason = "Unable to acquire the Microsoft Graph application token."
+        run.completed_at = datetime.now(UTC)
+        await session.commit()
+        raise
+
+    for finding in result.findings:
+        object_ids, counts = evidence_summary(finding.raw_evidence, settings)
+        session.add(_finding_record(run, tenant, finding, object_ids, counts))
+    run.status = "COMPLETE"
+    run.collector_version = result.tool_version
+    run.completed_at = datetime.now(UTC)
+    await session.commit()
+    return run_view(run)
+
+
+def _finding_record(
+    run: Run, tenant: Tenant, finding: Finding, object_ids: list[str], counts: dict[str, int]
+) -> FindingRecord:
+    return FindingRecord(
+        tenant_id=tenant.id,
+        run_id=run.id,
+        control_id=finding.control_id,
+        nis2=finding.nis2,
+        domain=finding.domain,
+        title=finding.title,
+        verdict=finding.verdict,
+        rationale=finding.rationale,
+        endpoints=finding.endpoints,
+        remediation=finding.remediation,
+        limits=finding.limits,
+        object_ids=object_ids,
+        counts=counts,
+    )
+
+
+def run_view(run: Run) -> dict[str, object]:
+    return {
+        "id": str(run.id),
+        "status": run.status,
+        "source": run.source,
+        "collectorVersion": run.collector_version,
+        "createdAt": run.created_at.isoformat() if run.created_at else None,
+        "completedAt": run.completed_at.isoformat() if run.completed_at else None,
+        "failureReason": run.failure_reason,
+    }
+
+
+def finding_view(finding: FindingRecord) -> dict[str, object]:
+    return {
+        "id": str(finding.id),
+        "controlId": finding.control_id,
+        "nis2": finding.nis2,
+        "domain": finding.domain,
+        "title": finding.title,
+        "verdict": finding.verdict,
+        "rationale": finding.rationale,
+        "endpoints": finding.endpoints,
+        "remediation": finding.remediation,
+        "limits": finding.limits,
+        "objectIds": finding.object_ids,
+        "counts": finding.counts,
+    }
+
+
+async def list_runs(session: AsyncSession, settings: Settings, limit: int = 20) -> list[dict[str, object]]:
+    tenant = await ensure_tenant(session, settings)
+    query: Select[tuple[Run]] = (
+        select(Run).where(Run.tenant_id == tenant.id).order_by(desc(Run.created_at)).limit(limit)
+    )
+    return [run_view(run) for run in (await session.scalars(query)).all()]
+
+
+async def get_run(session: AsyncSession, settings: Settings, run_id: UUID) -> Run | None:
+    tenant = await ensure_tenant(session, settings)
+    result = await session.scalars(select(Run).where(Run.id == run_id, Run.tenant_id == tenant.id))
+    return result.one_or_none()
+
+
+async def list_findings(
+    session: AsyncSession, settings: Settings, run_id: UUID
+) -> list[dict[str, object]]:
+    run = await get_run(session, settings, run_id)
+    if run is None:
+        return []
+    query: Select[tuple[FindingRecord]] = (
+        select(FindingRecord)
+        .where(FindingRecord.run_id == run.id)
+        .order_by(FindingRecord.control_id)
+    )
+    return [finding_view(finding) for finding in (await session.scalars(query)).all()]
+
+
+async def compare_runs(
+    session: AsyncSession, settings: Settings, left_run_id: UUID, right_run_id: UUID
+) -> list[dict[str, object]]:
+    left = {
+        str(item["controlId"]): item
+        for item in await list_findings(session, settings, left_run_id)
+    }
+    right = {
+        str(item["controlId"]): item
+        for item in await list_findings(session, settings, right_run_id)
+    }
+    return [
+        {
+            "controlId": control_id,
+            "previous": left.get(control_id),
+            "current": right.get(control_id),
+            "change": _change(left.get(control_id), right.get(control_id)),
+        }
+        for control_id in sorted(set(left) | set(right))
+    ]
+
+
+def _change(previous: dict[str, object] | None, current: dict[str, object] | None) -> str:
+    if previous is None:
+        return "NEW"
+    if current is None:
+        return "REMOVED"
+    if previous["verdict"] == current["verdict"]:
+        return "UNCHANGED"
+    return "CHANGED"

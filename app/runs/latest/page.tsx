@@ -1,8 +1,18 @@
-import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
-import { findings } from "@/lib/demo";
-import { Status } from "@/components/status";
+import { RunDetail } from "@/components/run-detail";
+import { getFindings, getRuns, HostedApiError } from "@/lib/hosted-api";
 import { requireSession } from "@/lib/require-session";
+
 export const dynamic = "force-dynamic";
 
-export default async function LatestRun() { await requireSession(); return <AppShell><section className="hero"><div className="eyebrow">Run detail</div><h1>25 August 2026</h1><p>Tenant run completed in 46 seconds. Filter the evidence by verdict or control domain.</p></section><div className="filters"><button className="filter">All verdicts</button><button className="filter">Authentication</button><button className="filter">Access management</button><button className="filter">Devices</button><button className="filter">Incident response</button></div><table className="table"><thead><tr><th>Control</th><th>Verdict</th><th>Rationale</th></tr></thead><tbody>{findings.map(f=><tr key={f.id}><td><Link href={`/findings/${f.id}`}><b>{f.id}</b> — {f.title}</Link></td><td><Status verdict={f.verdict}/></td><td>{f.changed === "New" ? "New evidence needs review." : "Evidence available in the control detail."}</td></tr>)}</tbody></table></AppShell>; }
+export default async function LatestRun() {
+  await requireSession();
+  try {
+    const [latest] = await getRuns();
+    const findings = latest ? await getFindings(latest.id) : [];
+    return <AppShell><RunDetail run={latest || null} findings={findings} /></AppShell>;
+  } catch (error) {
+    const detail = error instanceof HostedApiError ? "Check the hosted API connection and try again." : "An unexpected error occurred.";
+    return <AppShell><section className="empty-state"><div className="eyebrow">Collection service unavailable</div><h1>Evidence cannot be loaded.</h1><p>{detail}</p></section></AppShell>;
+  }
+}

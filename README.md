@@ -22,7 +22,7 @@ doet uitsluitend GET-verzoeken naar Microsoft Graph en verandert nooit tenantcon
 | C11 | ASR block mode | DeviceManagementConfiguration.Read.All | Profielvormen verschillen. |
 | C12 | Directory audit logs | AuditLog.Read.All | Nooit PASS: Unified Audit is niet via Graph verifieerbaar. |
 | C13 | Security contact | Organization.Read.All | Monitoring niet gevalideerd. |
-| C14 | Third-party apps met hoge rechten | DelegatedPermissionGrant.Read.All | Alleen geselecteerde delegated scopes. |
+| C14 | Third-party apps met hoge rechten | Directory.Read.All | Alleen geselecteerde delegated scopes. |
 | C15 | User consent beperken | Policy.Read.All | Alleen standaardbeleid. |
 
 ## CLI en container
@@ -53,38 +53,67 @@ mypy --strict packages/collector packages/catalog
 De collector doet uitsluitend GET-verzoeken naar Microsoft Graph. Bij ontoegankelijke of
 onvolledige data rapporteert hij `INCONCLUSIVE` en doet hij geen aannames.
 
-## Hosted interface: Microsoft Entra sign-in
+## Hosted product
 
-The Next.js hosted interface now uses a tenant-restricted Microsoft Entra authorization-code
-flow. It validates the Microsoft ID token signature, issuer, audience, nonce and tenant ID;
-uses PKCE and a state cookie; and stores only a signed, eight-hour application session. It
-does not store a Microsoft access or refresh token. The collector remains separate and only
-uses its documented read-only Microsoft Graph scopes.
+The hosted product is a single-tenant deployment for the tenant named in its environment. Its
+web interface authenticates users with Entra; its separate API obtains an application-only,
+read-only Graph token and invokes the same Python collector used by the CLI. The web app never
+receives a Graph token. The API stores completed runs, verdicts, rationale, control metadata,
+counts, and HMAC-keyed object references only. It never stores raw Graph responses, UPNs, email
+addresses, access tokens, or refresh tokens.
+
+Runs can be started manually from the hosted UI. `vercel.json` schedules a protected daily run
+at 03:00 UTC; change the expression if a different schedule is required. A partial unique index
+prevents overlapping runs for the tenant.
+
+### Entra application registration
 
 1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), open **App
    registrations** and choose **New registration**.
 2. Select **Accounts in this organizational directory only (single tenant)**. Give it a name
    such as `Nis2Check Hosted`.
 3. Under **Redirect URI**, select **Web** and enter
-   `https://<your-production-domain>/api/auth/callback/microsoft`.
+   `https://<your-web-domain>/api/auth/callback/microsoft`.
 4. Copy the **Directory (tenant) ID** and **Application (client) ID** from the app's Overview.
 5. Under **Certificates & secrets**, create a client secret and copy its **Value** immediately.
    Do not use the secret ID. Add an expiry reminder before its end date.
-6. No Microsoft Graph API permission is needed merely to sign in. `openid`, `profile`, and
-   `email` are OpenID Connect scopes requested by the application. For tighter access control,
-   assign users/groups to the Enterprise application and set **Assignment required?** to Yes.
+6. In **API permissions** → **Microsoft Graph** → **Application permissions**, add the union
+   of the read-only permissions in the controls table above. Grant admin consent. Do not add
+   delegated Graph permissions or any write permission. `openid`, `profile`, and `email` are
+   requested only for browser sign-in.
+7. For tighter access control, assign users/groups to the Enterprise application and set
+   **Assignment required?** to Yes.
 
-In Vercel, set the following production environment variables (see `.env.example`):
+### Deployment
+
+Provision a PostgreSQL database (for example through the Neon Vercel Marketplace integration).
+Deploy `apps/api/Dockerfile` to a container host that supports long-running HTTP requests, then
+set its public HTTPS URL as `NIS2CHECK_API_URL` in the Vercel web project. The API needs its own
+environment values from `apps/api/.env.example`; the web project needs `.env.example`. The two
+projects must share the same `NIS2CHECK_API_KEY`, but all other generated secrets must be
+different.
+
+The API creates its schema on first start. For local development, copy `apps/api/.env.example`
+to `apps/api/.env`, then run:
+
+```powershell
+docker compose up --build
+```
+
+In Vercel, configure the following production variables:
 
 | Variable | Value |
 |---|---|
-| `APP_URL` | Your final Vercel production URL, without a trailing `/` |
+| `APP_URL` | Final Vercel production URL, without a trailing `/` |
 | `ENTRA_TENANT_ID` | Directory (tenant) ID |
 | `ENTRA_CLIENT_ID` | Application (client) ID |
-| `ENTRA_CLIENT_SECRET` | The client secret **value** |
-| `AUTH_SECRET` | A new random value, e.g. `openssl rand -base64 48` |
+| `ENTRA_CLIENT_SECRET` | Client secret **value** |
+| `AUTH_SECRET` | Random value: `openssl rand -base64 48` |
+| `NIS2CHECK_API_URL` | Public base URL of the deployed hosted API |
+| `NIS2CHECK_API_KEY` | Same random API key used by the API deployment |
+| `CRON_SECRET` | Separate random value protecting the Vercel cron route |
 
 Set `APP_URL` before deploying and make the callback URL in Entra match it exactly. For local
 development, add `http://localhost:3000/api/auth/callback/microsoft` as a second Web redirect
-URI and use `APP_URL=http://localhost:3000` in `.env.local`. Never commit `.env.local` or the
-client secret.
+URI and use `APP_URL=http://localhost:3000` in `.env.local`. Never commit `.env.local`,
+`apps/api/.env`, client secrets, database URLs, or generated keys.

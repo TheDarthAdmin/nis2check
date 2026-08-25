@@ -11,6 +11,12 @@ def test_loads_c01_catalogue() -> None:
     assert controls[0].queries["policies"].paged is True
 
 
+def test_high_privilege_app_control_uses_application_compatible_read_scope() -> None:
+    controls = {item.id: item for item in load_catalog(Path("packages/catalog/controls"))}
+
+    assert controls["C14"].requires.scopes == ["Directory.Read.All"]
+
+
 def test_rejects_invalid_catalogue_document(tmp_path: Path) -> None:
     invalid = tmp_path / "C99.yaml"
     invalid.write_text("id: C99\ntitle: incomplete\n", encoding="utf-8")

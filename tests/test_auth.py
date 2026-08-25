@@ -21,6 +21,21 @@ def test_certificate_auth_uses_graph_default_scope(application: MagicMock) -> No
     }
 
 
+@patch("nis2check_collector.auth.msal.ConfidentialClientApplication")
+def test_client_secret_auth_uses_graph_default_scope(application: MagicMock) -> None:
+    application.return_value.acquire_token_for_client.return_value = {"access_token": "fixture-token"}
+
+    auth = MsalAuthenticator("fixture-tenant", "fixture-client")
+    token = auth.acquire_client_secret_token("fixture-secret")
+
+    assert token == "fixture-token"
+    application.assert_called_once_with(
+        "fixture-client",
+        authority="https://login.microsoftonline.com/fixture-tenant",
+        client_credential="fixture-secret",
+    )
+
+
 @patch("nis2check_collector.auth.msal.PublicClientApplication")
 def test_device_code_auth_displays_flow_message(application: MagicMock, tmp_path: Path) -> None:
     application.return_value.get_accounts.return_value = []

@@ -11,7 +11,7 @@ from typing import Any
 async def run_scheduled_tenant_run(_: Mapping[str, Any], tenant_id: str) -> None:
     """Queue entry point; persistence and secret resolution remain in the hosted boundary."""
     # Wiring intentionally lives in deployment configuration so the collector stays pure.
-    _ = tenant_id
+    del tenant_id
 
 
 class WorkerSettings:

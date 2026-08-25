@@ -2,7 +2,7 @@ id: C14
 nis2: "21(2)(d)"
 domain: supply_chain
 title: Third-party apps with high Graph permissions are identified
-requires: {scopes: [DelegatedPermissionGrant.Read.All], licence: none}
+requires: {scopes: [Directory.Read.All], licence: none}
 queries:
   grants: {endpoint: "/v1.0/oauth2PermissionGrants?$select=clientId,scope,consentType", paged: true}
 handler: high_privilege_apps

@@ -7,7 +7,7 @@ stored separately with expiry so normal application queries never receive it by 
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -46,12 +46,22 @@ class User(Base):
 
 class Run(Base):
     __tablename__ = "runs"
-    __table_args__ = (Index("ix_runs_tenant_created", "tenant_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_runs_tenant_created", "tenant_id", "created_at"),
+        Index(
+            "uq_runs_one_active_per_tenant",
+            "tenant_id",
+            unique=True,
+            postgresql_where=text("status = 'RUNNING'"),
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False, default="manual")
     collector_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    failure_reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -64,8 +74,14 @@ class FindingRecord(Base):
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False)
     run_id: Mapped[UUID] = mapped_column(ForeignKey("runs.id"), nullable=False)
     control_id: Mapped[str] = mapped_column(String(8), nullable=False)
+    nis2: Mapped[str] = mapped_column(String(32), nullable=False)
+    domain: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
     verdict: Mapped[str] = mapped_column(String(24), nullable=False)
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    endpoints: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    remediation: Mapped[str] = mapped_column(Text, nullable=False)
+    limits: Mapped[str] = mapped_column(Text, nullable=False)
     object_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     counts: Mapped[dict[str, int]] = mapped_column(JSONB, default=dict)
 

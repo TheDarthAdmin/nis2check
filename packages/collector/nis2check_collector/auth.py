@@ -53,6 +53,15 @@ class MsalAuthenticator:
         )
         return self._access_token(app.acquire_token_for_client([GRAPH_DEFAULT_SCOPE]))
 
+    def acquire_client_secret_token(self, client_secret: str) -> str:
+        """Acquire an app-only token using a confidential-client secret."""
+        app = msal.ConfidentialClientApplication(
+            self.client_id,
+            authority=self.authority,
+            client_credential=client_secret,
+        )
+        return self._access_token(app.acquire_token_for_client([GRAPH_DEFAULT_SCOPE]))
+
     def acquire_device_code_token(
         self,
         scopes: list[str],

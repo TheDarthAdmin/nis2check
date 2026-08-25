@@ -1,7 +1,7 @@
-import { AppShell } from "@/components/app-shell";
-import { findings } from "@/lib/demo";
-import { Status } from "@/components/status";
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/require-session";
-export const dynamic = "force-dynamic";
 
-export default async function Finding({ params }: { params: Promise<{id:string}> }) { await requireSession(); const {id}=await params; const finding=findings.find(item=>item.id===id) ?? findings[0]; return <AppShell><article className="detail"><section className="hero"><div className="eyebrow">{finding.domain} · NIS2 article 21</div><h1>{finding.id}: {finding.title}</h1><Status verdict={finding.verdict}/></section><section className="card"><h2>Rationale</h2><p>The collected Graph response provides technical evidence for this control. Interpretation remains deliberately separate from the raw response.</p><p className="muted">Limitation: this finding does not replace organizational policy, risk assessment, or audit judgement.</p></section><section><h2>Queried endpoints</h2><code>/v1.0/identity/conditionalAccess/policies</code></section><section><h2>Raw evidence</h2><details className="card"><summary>Show encrypted / retained evidence</summary><pre className="evidence">{`{\n  "objectIds": ["pseudonymous-object-id"],\n  "state": "enabled"\n}`}</pre></details></section><section><a className="filter" href="https://learn.microsoft.com/entra/identity/conditional-access/">Open Microsoft remediation guidance →</a></section></article></AppShell>; }
+export default async function LegacyFinding() {
+  await requireSession();
+  redirect("/runs/latest");
+}
