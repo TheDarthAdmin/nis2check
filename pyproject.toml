@@ -49,7 +49,7 @@ nis2check_catalog = ["schema.json"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-pythonpath = ["packages/collector", "packages/catalog", "apps/api"]
+pythonpath = ["packages/collector", "packages/catalog", "apps/api", "apps/cli"]
 
 [tool.ruff]
 target-version = "py312"
@@ -62,8 +62,8 @@ ignore = ["E501"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["nis2check_collector", "nis2check_catalog"]
-mypy_path = "packages/collector:packages/catalog"
+packages = ["nis2check_collector", "nis2check_catalog", "nis2check_cli"]
+mypy_path = "packages/collector:packages/catalog:apps/cli"
 
 [tool.vercel]
 # Used only by the separate Vercel project whose Framework Preset is FastAPI.

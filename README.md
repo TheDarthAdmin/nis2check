@@ -29,9 +29,14 @@ doet uitsluitend GET-verzoeken naar Microsoft Graph en verandert nooit tenantcon
 
 ```powershell
 pip install nis2check
-nis2check run --tenant-id <tenant-id> --client-id <app-id> --device-code
+nis2check run --tenant-id <tenant-id> --client-id <app-id> --device-code --html rapport.html
 nis2check report nis2check.json
 ```
+
+`run` schrijft het JSON-resultaat, toont een samenvatting per verdict met de controls die
+opvolging vragen, en rendert met `--html` meteen het rapport. `report` maakt hetzelfde
+zelfstandige HTML-rapport uit een bestaand JSON-resultaat: filterbaar per verdict en domein,
+zonder externe bronnen, printbaar.
 
 Gebruik een klantgecontroleerde Entra-appregistratie met uitsluitend de read scopes uit de
 tabel. Gebruik voor certificaatauthenticatie `--certificate key.pem --thumbprint <thumbprint>`.
@@ -47,7 +52,7 @@ docker run --rm -it -v ${PWD}:/output nis2check run --tenant-id <tenant-id> --cl
 python -m pip install -e ".[dev]"
 pytest
 ruff check .
-mypy --strict packages/collector packages/catalog
+mypy --strict packages/collector packages/catalog apps/cli
 ```
 
 De collector doet uitsluitend GET-verzoeken naar Microsoft Graph. Bij ontoegankelijke of

@@ -12,9 +12,10 @@ export default async function LatestRun({ searchParams }: { searchParams: Promis
   try {
     const tenant = await getTenantStatus(session.tenantId);
     if (!tenant.consentGranted) return <AppShell><TenantOnboarding failed={onboarding === "failed"} /></AppShell>;
-    const [latest] = await getRuns(session.tenantId);
+    const runs = await getRuns(session.tenantId);
+    const [latest] = runs;
     const findings = latest ? await getFindings(session.tenantId, latest.id) : [];
-    return <AppShell><RunDetail run={latest || null} findings={findings} /></AppShell>;
+    return <AppShell><RunDetail run={latest || null} findings={findings} runs={runs} /></AppShell>;
   } catch (error) {
     const detail = error instanceof HostedApiError ? "Check the hosted API connection and try again." : "An unexpected error occurred.";
     return <AppShell><section className="empty-state"><div className="eyebrow">Collection service unavailable</div><h1>Evidence cannot be loaded.</h1><p>{detail}</p></section></AppShell>;

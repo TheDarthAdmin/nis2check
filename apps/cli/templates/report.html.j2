@@ -1,5 +1,203 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Nis2Check evidence report</title>
-<style>body{font:15px system-ui,sans-serif;color:#14213d;margin:3rem;max-width:1100px}header{border-bottom:3px solid #0b7285;padding-bottom:1rem}.meta{color:#52616b}article{border:1px solid #d8dee4;border-radius:8px;padding:1rem;margin:1rem 0}.PASS{border-left:6px solid #2b8a3e}.PARTIAL{border-left:6px solid #f08c00}.FAIL{border-left:6px solid #c92a2a}.INCONCLUSIVE{border-left:6px solid #6c757d}code,pre{white-space:pre-wrap;word-break:break-word}summary{cursor:pointer}</style>
-</head><body><header><h1>Nis2Check evidence report</h1><p class="meta">Tenant: {{ run.tenant_id }} · UTC: {{ run.started_at }} · Tool: {{ run.tool_version }}</p><p>Technical evidence only; this is not a NIS2 conformance statement.</p></header>
-{% for finding in findings %}<article class="{{ finding.verdict }}"><h2>{{ finding.control_id }} — {{ finding.title }}</h2><p><b>NIS2:</b> {{ finding.nis2 }} · <b>Verdict:</b> {{ finding.verdict }}</p><p>{{ finding.rationale }}</p><p><b>Endpoints:</b> {% for endpoint in finding.endpoints %}<code>{{ endpoint }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p><p><a href="{{ finding.remediation }}">Remediation guidance</a></p><p><b>Limit:</b> {{ finding.limits }}</p><details><summary>Raw evidence</summary><pre>{{ finding.raw_evidence | tojson(indent=2) }}</pre></details></article>{% endfor %}</body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nis2Check evidence report — {{ run.tenant_id }}</title>
+<style>
+:root{--ink:#14213d;--muted:#52616b;--canvas:#f6f7f9;--surface:#fff;--line:#d8dee4;--accent:#0b7285;--soft:#eef4f6;--fail:#c92a2a;--partial:#b25e00;--inconclusive:#5c6773;--pass:#2b8a3e;--not_applicable:#5c6773}
+@media(prefers-color-scheme:dark){:root{--ink:#e8edf2;--muted:#9aa7b4;--canvas:#12161c;--surface:#1a2029;--line:#2c3542;--accent:#4db6c9;--soft:#1f2a33;--fail:#ff8b8b;--partial:#f0a95c;--inconclusive:#a3b0bd;--pass:#6bd08a;--not_applicable:#a3b0bd}}
+*{box-sizing:border-box}
+body{margin:0;padding:2.5rem 1.5rem 4rem;background:var(--canvas);color:var(--ink);font:15px/1.55 system-ui,"Segoe UI",sans-serif}
+.page{max-width:1100px;margin:0 auto}
+a{color:var(--accent)}
+h1{margin:0 0 .4rem;font-size:1.9rem;letter-spacing:-.02em}
+h2{margin:0;font-size:1.1rem;letter-spacing:-.01em}
+h3{margin:0;font-size:1.02rem;letter-spacing:-.01em}
+.meta{color:var(--muted);font-size:.85rem;margin:0}
+.meta b{color:var(--ink);font-weight:600}
+header.top{border-bottom:3px solid var(--accent);padding-bottom:1.1rem;margin-bottom:1.5rem}
+.notice{margin:.9rem 0 0;border-left:4px solid var(--accent);background:var(--soft);border-radius:0 6px 6px 0;padding:.6rem .8rem;font-size:.88rem}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:1.1rem 1.2rem;margin:0 0 1.2rem}
+.tally{display:flex;flex-wrap:wrap;gap:.5rem;margin:.9rem 0 0;padding:0;list-style:none}
+.chip{display:flex;align-items:center;gap:.5rem;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:inherit;font:inherit;font-size:.85rem;padding:.35rem .8rem;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed=true]{border-color:currentColor;background:var(--soft)}
+.chip .count{font-weight:700;font-variant-numeric:tabular-nums}
+.chip.FAIL{color:var(--fail)}.chip.PARTIAL{color:var(--partial)}.chip.INCONCLUSIVE,.chip.NOT_APPLICABLE{color:var(--inconclusive)}.chip.PASS{color:var(--pass)}
+.chip .label{color:var(--ink)}
+.followup{margin:1rem 0 0;padding:0;list-style:none;display:grid;gap:.35rem}
+.followup a{display:flex;gap:.6rem;align-items:baseline;text-decoration:none;color:inherit;font-size:.9rem;padding:.35rem .45rem;border-radius:6px;border:1px solid transparent}
+.followup a:hover{background:var(--soft);border-color:var(--line)}
+.followup .cid{font-weight:700;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:0 0 1.2rem;position:sticky;top:0;z-index:2;background:var(--canvas);padding:.7rem 0}
+.toolbar input,.toolbar select{font:inherit;font-size:.9rem;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.45rem .6rem;min-width:12rem}
+.toolbar input:focus-visible,.toolbar select:focus-visible,.chip:focus-visible,.link-button:focus-visible,.followup a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.link-button{border:1px solid var(--line);border-radius:6px;background:var(--surface);color:inherit;font:inherit;font-size:.85rem;padding:.45rem .7rem;cursor:pointer}
+.link-button:hover{border-color:var(--accent)}
+.result-count{color:var(--muted);font-size:.85rem;margin-left:auto}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.domain{margin:0 0 1.6rem}
+.domain-head{display:flex;align-items:baseline;gap:.6rem;margin:0 0 .7rem}
+.domain-head .count{color:var(--muted);font-size:.85rem}
+article{border:1px solid var(--line);border-left-width:6px;border-radius:8px;background:var(--surface);padding:1rem 1.1rem;margin:0 0 .8rem}
+article:target{outline:2px solid var(--accent);outline-offset:3px}
+article.FAIL{border-left-color:var(--fail)}article.PARTIAL{border-left-color:var(--partial)}article.PASS{border-left-color:var(--pass)}article.INCONCLUSIVE,article.NOT_APPLICABLE{border-left-color:var(--inconclusive)}
+.finding-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.6rem}
+.finding-head .cid{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:.4rem}
+.badge{border-radius:999px;border:1px solid currentColor;padding:.1rem .6rem;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.badge.FAIL{color:var(--fail)}.badge.PARTIAL{color:var(--partial)}.badge.PASS{color:var(--pass)}.badge.INCONCLUSIVE,.badge.NOT_APPLICABLE{color:var(--inconclusive)}
+.rationale{margin:.7rem 0 .2rem}
+.hint{margin:0;color:var(--muted);font-size:.85rem}
+.fields{margin:.9rem 0 0;display:grid;gap:.55rem;font-size:.88rem}
+.fields dt{color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.fields dd{margin:.2rem 0 0}
+code{background:var(--soft);border-radius:4px;padding:.1rem .35rem;font-size:.82rem}
+code,pre{white-space:pre-wrap;word-break:break-word}
+pre{background:var(--soft);border-radius:6px;padding:.7rem;font-size:.8rem;max-height:26rem;overflow:auto}
+details{margin:.9rem 0 0;border-top:1px solid var(--line);padding-top:.7rem}
+summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+.empty{display:none;color:var(--muted);padding:2rem 0;text-align:center}
+.hidden{display:none!important}
+footer{margin-top:2rem;border-top:1px solid var(--line);padding-top:1rem;color:var(--muted);font-size:.82rem}
+@media print{body{padding:0;background:#fff}.toolbar,.link-button{display:none}article,.card{break-inside:avoid}pre{max-height:none}}
+</style>
+</head><body><div class="page">
+<header class="top">
+  <h1>Nis2Check evidence report</h1>
+  <p class="meta">Tenant <b>{{ run.tenant_id }}</b> · Collected <b>{{ run.started_at.strftime('%Y-%m-%d %H:%M') }} UTC</b> · Collector <b>{{ run.tool_version }}</b> · <b>{{ findings | length }}</b> control{{ '' if findings | length == 1 else 's' }} evaluated</p>
+  <p class="notice">Technical evidence only; this is not a NIS2 conformance statement. Only read-only Microsoft Graph queries were used, no aggregate score is calculated, and data that could not be read is reported as <b>inconclusive</b> instead of assumed.</p>
+</header>
+
+<section class="card" aria-labelledby="summary-heading">
+  <h2 id="summary-heading">Verdicts</h2>
+  <p class="meta">Select a verdict to filter the report.</p>
+  <ul class="tally">
+    {%- for verdict, count in tally %}
+    <li><button type="button" class="chip {{ verdict }}" data-filter="{{ verdict }}" aria-pressed="false" title="{{ hints[verdict] }}"><span class="count">{{ count }}</span><span class="label">{{ verdict.replace('_', ' ') | capitalize }}</span></button></li>
+    {%- endfor %}
+  </ul>
+  {%- if follow_up %}
+  <h2 class="followup-heading" style="margin-top:1.4rem">Needs follow-up</h2>
+  <p class="meta">{{ follow_up | length }} control{{ '' if follow_up | length == 1 else 's' }} could not be evidenced as fully in place.</p>
+  <ul class="followup">
+    {%- for finding in follow_up %}
+    <li><a href="#{{ finding.control_id }}"><span class="cid">{{ finding.control_id }}</span><span>{{ finding.title }}</span><span class="badge {{ finding.verdict }}" style="margin-left:auto">{{ finding.verdict.replace('_', ' ') }}</span></a></li>
+    {%- endfor %}
+  </ul>
+  {%- else %}
+  <p class="meta" style="margin-top:1rem">Every evaluated control returned evidence that supports it, or was not applicable to this tenant.</p>
+  {%- endif %}
+</section>
+
+<div class="toolbar" hidden id="toolbar">
+  <label class="visually-hidden" for="search">Search findings</label>
+  <input id="search" type="search" placeholder="Search control, rationale or endpoint" autocomplete="off">
+  <label class="visually-hidden" for="domain">Domain</label>
+  <select id="domain"><option value="">All domains</option>{% for domain, items in domains %}<option value="{{ domain }}">{{ domain | domain_label }} ({{ items | length }})</option>{% endfor %}</select>
+  <button type="button" class="link-button" id="toggle-evidence" aria-pressed="false">Expand raw evidence</button>
+  <button type="button" class="link-button hidden" id="reset" data-reset>Clear filters</button>
+  <span class="result-count" id="result-count" role="status" aria-live="polite"></span>
+</div>
+
+{%- for domain, items in domains %}
+<section class="domain" data-domain-section="{{ domain }}">
+  <div class="domain-head"><h2 id="domain-{{ domain }}">{{ domain | domain_label }}</h2><span class="count" data-domain-count>{{ items | length }} control{{ '' if items | length == 1 else 's' }}</span></div>
+  {%- for finding in items %}
+  <article class="{{ finding.verdict }}" id="{{ finding.control_id }}" data-verdict="{{ finding.verdict }}" data-domain="{{ finding.domain }}" data-search="{{ (finding.control_id ~ ' ' ~ finding.title ~ ' ' ~ finding.rationale ~ ' ' ~ finding.domain ~ ' ' ~ finding.nis2 ~ ' ' ~ finding.endpoints | join(' ')) | lower }}">
+    <div class="finding-head"><h3><span class="cid">{{ finding.control_id }}</span>{{ finding.title }}</h3><span class="badge {{ finding.verdict }}">{{ finding.verdict.replace('_', ' ') }}</span></div>
+    <p class="meta">{{ finding.domain | domain_label }} · NIS2 article {{ finding.nis2 }}</p>
+    <p class="rationale">{{ finding.rationale }}</p>
+    <p class="hint">{{ hints[finding.verdict] }}</p>
+    <dl class="fields">
+      <div><dt>Queried endpoints</dt><dd>{% for endpoint in finding.endpoints %}<code>{{ endpoint }}</code>{% if not loop.last %} {% endif %}{% endfor %}</dd></div>
+      <div><dt>Limitation of this check</dt><dd>{{ finding.limits }}</dd></div>
+      <div><dt>Remediation</dt><dd><a href="{{ finding.remediation }}" rel="noreferrer">Microsoft guidance for {{ finding.control_id }} ↗</a></dd></div>
+    </dl>
+    <details><summary>Raw evidence as returned by Microsoft Graph</summary><pre>{{ finding.raw_evidence | tojson(indent=2) }}</pre></details>
+  </article>
+  {%- endfor %}
+</section>
+{%- endfor %}
+
+<p class="empty" id="empty">No control matches the current filters. <button type="button" class="link-button" data-reset>Clear filters</button></p>
+
+<footer>Generated by Nis2Check {{ run.tool_version }}. The evidence reflects the tenant configuration at {{ run.started_at.strftime('%Y-%m-%d %H:%M') }} UTC and says nothing about the period before or after it.</footer>
+</div>
+<script>
+(function () {
+  var toolbar = document.getElementById("toolbar");
+  var search = document.getElementById("search");
+  var domain = document.getElementById("domain");
+  var reset = document.getElementById("reset");
+  var count = document.getElementById("result-count");
+  var empty = document.getElementById("empty");
+  var evidence = document.getElementById("toggle-evidence");
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip"));
+  var articles = Array.prototype.slice.call(document.querySelectorAll("article[data-verdict]"));
+  var sections = Array.prototype.slice.call(document.querySelectorAll("[data-domain-section]"));
+  var verdicts = [];
+  toolbar.hidden = false;
+
+  function apply() {
+    var query = search.value.trim().toLowerCase();
+    var visible = 0;
+    articles.forEach(function (article) {
+      var match =
+        (verdicts.length === 0 || verdicts.indexOf(article.getAttribute("data-verdict")) !== -1) &&
+        (domain.value === "" || domain.value === article.getAttribute("data-domain")) &&
+        (query === "" || article.getAttribute("data-search").indexOf(query) !== -1);
+      article.classList.toggle("hidden", !match);
+      if (match) visible += 1;
+    });
+    sections.forEach(function (section) {
+      var shown = section.querySelectorAll("article:not(.hidden)").length;
+      var total = section.querySelectorAll("article").length;
+      var label = section.querySelector("[data-domain-count]");
+      section.classList.toggle("hidden", shown === 0);
+      label.textContent = (shown === total ? total : shown + " of " + total) + (total === 1 ? " control" : " controls");
+    });
+    var filtered = verdicts.length > 0 || domain.value !== "" || query !== "";
+    count.textContent = filtered ? visible + " of " + articles.length + " controls shown" : "";
+    reset.classList.toggle("hidden", !filtered);
+    empty.style.display = visible === 0 ? "block" : "none";
+  }
+
+  function clearFilters() {
+    verdicts = [];
+    chips.forEach(function (chip) { chip.setAttribute("aria-pressed", "false"); });
+    search.value = "";
+    domain.value = "";
+    apply();
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var verdict = chip.getAttribute("data-filter");
+      var index = verdicts.indexOf(verdict);
+      if (index === -1) { verdicts.push(verdict); } else { verdicts.splice(index, 1); }
+      chip.setAttribute("aria-pressed", index === -1 ? "true" : "false");
+      apply();
+    });
+  });
+  search.addEventListener("input", apply);
+  domain.addEventListener("change", apply);
+  evidence.addEventListener("click", function () {
+    var open = evidence.getAttribute("aria-pressed") !== "true";
+    Array.prototype.forEach.call(document.querySelectorAll("details"), function (item) { item.open = open; });
+    evidence.setAttribute("aria-pressed", open ? "true" : "false");
+    evidence.textContent = open ? "Collapse raw evidence" : "Expand raw evidence";
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-reset]"), function (button) {
+    button.addEventListener("click", clearFilters);
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && document.activeElement === search) { clearFilters(); }
+    if (event.key === "/" && document.activeElement !== search) { event.preventDefault(); search.focus(); }
+  });
+  window.addEventListener("beforeprint", function () {
+    Array.prototype.forEach.call(document.querySelectorAll(".hidden"), function (item) {
+      if (item.tagName === "ARTICLE" || item.classList.contains("domain")) { item.classList.remove("hidden"); }
+    });
+  });
+  apply();
+})();
+</script>
+</body></html>
