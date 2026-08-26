@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from os import environ
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
 @dataclass(frozen=True)
@@ -15,12 +16,18 @@ class Settings:
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        url = self.database_url.replace("sslmode=", "ssl=")
+        url = self.database_url
         if url.startswith("postgres://"):
-            return "postgresql+asyncpg://" + url.removeprefix("postgres://")
+            url = "postgresql://" + url.removeprefix("postgres://")
         if url.startswith("postgresql://"):
-            return "postgresql+asyncpg://" + url.removeprefix("postgresql://")
-        return url
+            url = "postgresql+asyncpg://" + url.removeprefix("postgresql://")
+        parts = urlsplit(url)
+        query = [
+            ("ssl" if key == "sslmode" else key, value)
+            for key, value in parse_qsl(parts.query, keep_blank_values=True)
+            if key != "channel_binding"
+        ]
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 def get_settings() -> Settings:

@@ -31,7 +31,7 @@ def test_evidence_summary_stores_only_counts_and_keyed_pseudonyms() -> None:
 
 def test_settings_translate_neon_database_url_for_asyncpg() -> None:
     settings = Settings(
-        database_url="postgresql://user:password@example.com/database?sslmode=require",
+        database_url="postgresql://user:password@example.com/database?sslmode=require&channel_binding=require",
         client_id="fixture-client",
         client_secret="fixture-secret",
         api_key="a" * 32,
