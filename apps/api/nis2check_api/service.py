@@ -1,4 +1,4 @@
-"""Hosted orchestration: app-only Graph access, pseudonymous persistence, and reads."""
+"""Hosted orchestration: tenant-scoped Graph access and pseudonymous persistence."""
 
 import asyncio
 import hashlib
@@ -24,25 +24,51 @@ from .settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
 CATALOGUE = ROOT / "packages" / "catalog" / "controls"
+
+
 class ActiveRunError(RuntimeError):
-    """A collection is already in progress for this hosted tenant."""
+    """A collection is already in progress for this tenant."""
 
 
 class CollectionError(RuntimeError):
     """The app-only credential could not collect the tenant evidence."""
 
 
-async def ensure_tenant(session: AsyncSession, settings: Settings) -> Tenant:
-    tenant = await session.scalar(select(Tenant).where(Tenant.entra_tenant_id == settings.tenant_id))
-    if tenant is not None:
-        return tenant
-    organization = Organization(name="Hosted tenant")
-    session.add(organization)
-    await session.flush()
-    tenant = Tenant(organization_id=organization.id, entra_tenant_id=settings.tenant_id)
-    session.add(tenant)
-    await session.flush()
+class ConsentRequiredError(RuntimeError):
+    """The tenant administrator has not granted Graph application consent."""
+
+
+async def get_tenant(session: AsyncSession, entra_tenant_id: str) -> Tenant | None:
+    result: Tenant | None = await session.scalar(
+        select(Tenant).where(Tenant.entra_tenant_id == entra_tenant_id.lower())
+    )
+    return result
+
+
+async def record_admin_consent(session: AsyncSession, entra_tenant_id: str) -> Tenant:
+    """Create the tenant workspace only after a verified admin-consent callback."""
+    tenant = await get_tenant(session, entra_tenant_id)
+    if tenant is None:
+        # Do not store an organization display name or user identity from Entra.
+        organization = Organization(name="Microsoft 365 tenant")
+        session.add(organization)
+        await session.flush()
+        tenant = Tenant(organization_id=organization.id, entra_tenant_id=entra_tenant_id.lower())
+        session.add(tenant)
+    tenant.consent_granted_at = datetime.now(UTC)
+    await session.commit()
+    await session.refresh(tenant)
     return tenant
+
+
+def tenant_view(tenant: Tenant | None, entra_tenant_id: str) -> dict[str, object]:
+    return {
+        "tenantId": entra_tenant_id.lower(),
+        "consentGranted": bool(tenant and tenant.consent_granted_at),
+        "consentedAt": tenant.consent_granted_at.isoformat()
+        if tenant and tenant.consent_granted_at
+        else None,
+    }
 
 
 def _pseudonymize(value: str, settings: Settings) -> str:
@@ -70,32 +96,29 @@ def _id_values(value: object, key: str | None = None) -> Iterable[str]:
 def evidence_summary(raw_evidence: dict[str, Any], settings: Settings) -> tuple[list[str], dict[str, int]]:
     """Keep counts and keyed pseudonyms; raw Graph payloads never enter the database."""
     object_ids = sorted({_pseudonymize(value, settings) for value in _id_values(raw_evidence)})
-    counts = {
-        name: len(value)
-        for name, value in raw_evidence.items()
-        if isinstance(value, list)
-    }
+    counts = {name: len(value) for name, value in raw_evidence.items() if isinstance(value, list)}
     return object_ids, counts
 
 
-async def _collect(settings: Settings) -> RunResult:
+async def _collect(settings: Settings, tenant: Tenant) -> RunResult:
     try:
         token = await asyncio.to_thread(
-            MsalAuthenticator(settings.tenant_id, settings.client_id).acquire_client_secret_token,
+            MsalAuthenticator(tenant.entra_tenant_id, settings.client_id).acquire_client_secret_token,
             settings.client_secret,
         )
     except Exception as error:
         raise CollectionError("Unable to acquire the Microsoft Graph application token.") from error
     async with AsyncGraphClient(token) as graph:
         return await CollectorEngine(graph, version("nis2check")).run(
-            settings.tenant_id, load_catalog(CATALOGUE)
+            tenant.entra_tenant_id, load_catalog(CATALOGUE)
         )
 
 
 async def create_run(
-    session: AsyncSession, settings: Settings, source: str = "manual"
+    session: AsyncSession, settings: Settings, tenant: Tenant, source: str = "manual"
 ) -> dict[str, object]:
-    tenant = await ensure_tenant(session, settings)
+    if tenant.consent_granted_at is None:
+        raise ConsentRequiredError("A tenant administrator must grant Microsoft Graph consent first.")
     if source == "scheduled":
         today = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
         existing = await session.scalar(
@@ -116,7 +139,7 @@ async def create_run(
         raise ActiveRunError("A tenant collection is already in progress.") from error
     await session.refresh(run)
     try:
-        result = await _collect(settings)
+        result = await _collect(settings, tenant)
     except CollectionError:
         run.status = "FAILED"
         run.failure_reason = "Unable to acquire the Microsoft Graph application token."
@@ -132,6 +155,26 @@ async def create_run(
     run.completed_at = datetime.now(UTC)
     await session.commit()
     return run_view(run)
+
+
+async def create_scheduled_runs(session: AsyncSession, settings: Settings) -> dict[str, int]:
+    tenants = (
+        await session.scalars(
+            select(Tenant).where(Tenant.consent_granted_at.is_not(None)).order_by(Tenant.created_at)
+        )
+    ).all()
+    started = 0
+    skipped = 0
+    failed = 0
+    for tenant in tenants:
+        try:
+            await create_run(session, settings, tenant, "scheduled")
+            started += 1
+        except ActiveRunError:
+            skipped += 1
+        except CollectionError:
+            failed += 1
+    return {"started": started, "skipped": skipped, "failed": failed}
 
 
 def _finding_record(
@@ -183,44 +226,38 @@ def finding_view(finding: FindingRecord) -> dict[str, object]:
     }
 
 
-async def list_runs(session: AsyncSession, settings: Settings, limit: int = 20) -> list[dict[str, object]]:
-    tenant = await ensure_tenant(session, settings)
+async def list_runs(session: AsyncSession, tenant: Tenant, limit: int = 20) -> list[dict[str, object]]:
     query: Select[tuple[Run]] = (
         select(Run).where(Run.tenant_id == tenant.id).order_by(desc(Run.created_at)).limit(limit)
     )
     return [run_view(run) for run in (await session.scalars(query)).all()]
 
 
-async def get_run(session: AsyncSession, settings: Settings, run_id: UUID) -> Run | None:
-    tenant = await ensure_tenant(session, settings)
+async def get_run(session: AsyncSession, tenant: Tenant, run_id: UUID) -> Run | None:
     result = await session.scalars(select(Run).where(Run.id == run_id, Run.tenant_id == tenant.id))
     return result.one_or_none()
 
 
 async def list_findings(
-    session: AsyncSession, settings: Settings, run_id: UUID
+    session: AsyncSession, tenant: Tenant, run_id: UUID
 ) -> list[dict[str, object]]:
-    run = await get_run(session, settings, run_id)
+    run = await get_run(session, tenant, run_id)
     if run is None:
         return []
     query: Select[tuple[FindingRecord]] = (
         select(FindingRecord)
-        .where(FindingRecord.run_id == run.id)
+        .where(FindingRecord.run_id == run.id, FindingRecord.tenant_id == tenant.id)
         .order_by(FindingRecord.control_id)
     )
     return [finding_view(finding) for finding in (await session.scalars(query)).all()]
 
 
 async def compare_runs(
-    session: AsyncSession, settings: Settings, left_run_id: UUID, right_run_id: UUID
+    session: AsyncSession, tenant: Tenant, left_run_id: UUID, right_run_id: UUID
 ) -> list[dict[str, object]]:
-    left = {
-        str(item["controlId"]): item
-        for item in await list_findings(session, settings, left_run_id)
-    }
+    left = {str(item["controlId"]): item for item in await list_findings(session, tenant, left_run_id)}
     right = {
-        str(item["controlId"]): item
-        for item in await list_findings(session, settings, right_run_id)
+        str(item["controlId"]): item for item in await list_findings(session, tenant, right_run_id)
     }
     return [
         {

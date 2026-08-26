@@ -9,7 +9,7 @@ export async function GET() {
     const config = getConfig();
     const transaction = await startAuthTransaction();
     const authorizeUrl = new URL(
-      `https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/oauth2/v2.0/authorize`,
+      "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize",
     );
     authorizeUrl.search = new URLSearchParams({
       client_id: config.ENTRA_CLIENT_ID,

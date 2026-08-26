@@ -55,9 +55,10 @@ onvolledige data rapporteert hij `INCONCLUSIVE` en doet hij geen aannames.
 
 ## Hosted product
 
-The hosted product is a single-tenant deployment for the tenant named in its environment. Its
-web interface authenticates users with Entra; its separate API obtains an application-only,
-read-only Graph token and invokes the same Python collector used by the CLI. The web app never
+The hosted product is multitenant. A user signs in with their own Entra organization; the
+verified token tenant ID selects that organization’s Nis2Check workspace. A tenant administrator
+then grants the read-only Microsoft Graph application permissions. Microsoft creates the
+Nis2Check Enterprise Application in that tenant as part of this consent. The web app never
 receives a Graph token. The API stores completed runs, verdicts, rationale, control metadata,
 counts, and HMAC-keyed object references only. It never stores raw Graph responses, UPNs, email
 addresses, access tokens, or refresh tokens.
@@ -70,19 +71,21 @@ prevents overlapping runs for the tenant.
 
 1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), open **App
    registrations** and choose **New registration**.
-2. Select **Accounts in this organizational directory only (single tenant)**. Give it a name
-   such as `Nis2Check Hosted`.
-3. Under **Redirect URI**, select **Web** and enter
-   `https://<your-web-domain>/api/auth/callback/microsoft`.
-4. Copy the **Directory (tenant) ID** and **Application (client) ID** from the app's Overview.
+2. Select **Accounts in any organizational directory (Any Microsoft Entra ID tenant -
+   Multitenant)**. Give it a name such as `Nis2Check Hosted`.
+3. Under **Redirect URI**, select **Web** and enter both:
+   - `https://<your-web-domain>/api/auth/callback/microsoft`
+   - `https://<your-web-domain>/api/onboarding/callback/microsoft`
+4. Copy the **Application (client) ID** from the app's Overview.
 5. Under **Certificates & secrets**, create a client secret and copy its **Value** immediately.
    Do not use the secret ID. Add an expiry reminder before its end date.
 6. In **API permissions** → **Microsoft Graph** → **Application permissions**, add the union
-   of the read-only permissions in the controls table above. Grant admin consent. Do not add
-   delegated Graph permissions or any write permission. `openid`, `profile`, and `email` are
-   requested only for browser sign-in.
-7. For tighter access control, assign users/groups to the Enterprise application and set
-   **Assignment required?** to Yes.
+   of the read-only permissions in the controls table above. Do not grant consent in the
+   Nis2Check home tenant on behalf of customers; each customer administrator grants it during
+   onboarding. Do not add delegated Graph permissions or any write permission. `openid`,
+   `profile`, and `email` are requested only for browser sign-in.
+7. Each customer administrator signs in at the hosted front page and selects **Approve
+   read-only access**. This provisions the Enterprise Application and consent in their tenant.
 
 ### Cloud deployment
 
@@ -113,7 +116,6 @@ In Vercel, configure the following production variables:
 | Variable | Value |
 |---|---|
 | `APP_URL` | Final Vercel production URL, without a trailing `/` |
-| `ENTRA_TENANT_ID` | Directory (tenant) ID |
 | `ENTRA_CLIENT_ID` | Application (client) ID |
 | `ENTRA_CLIENT_SECRET` | Client secret **value** |
 | `AUTH_SECRET` | Random value: `openssl rand -base64 48` |
@@ -121,7 +123,14 @@ In Vercel, configure the following production variables:
 | `NIS2CHECK_API_KEY` | Same random API key used by the API deployment |
 | `CRON_SECRET` | Separate random value protecting the Vercel cron route |
 
-Set `APP_URL` before deploying and make the callback URL in Entra match it exactly. For local
-development, add `http://localhost:3000/api/auth/callback/microsoft` as a second Web redirect
-URI and use `APP_URL=http://localhost:3000` in `.env.local`. Never commit `.env.local`,
-`apps/api/.env`, client secrets, database URLs, or generated keys.
+The API Vercel project requires `DATABASE_URL`, `NIS2CHECK_CLIENT_ID`,
+`NIS2CHECK_CLIENT_SECRET`, `NIS2CHECK_API_KEY`, `EVIDENCE_HASH_KEY`, and `CRON_SECRET`.
+`NIS2CHECK_CLIENT_ID` and `NIS2CHECK_CLIENT_SECRET` are the same Entra application values as
+the web project; `NIS2CHECK_API_KEY` and `CRON_SECRET` must match the web project.
+
+Set `APP_URL` before deploying and make both callback URLs in Entra match exactly. For local
+development, add `http://localhost:3000/api/auth/callback/microsoft` and
+`http://localhost:3000/api/onboarding/callback/microsoft` as Web redirect URIs and use
+`APP_URL=http://localhost:3000` in `.env.local`. The API project does not have a tenant ID
+environment variable: every tenant ID is verified during sign-in and held as tenant-scoped data.
+Never commit `.env.local`, `apps/api/.env`, client secrets, database URLs, or generated keys.

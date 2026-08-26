@@ -7,7 +7,6 @@ from os import environ
 @dataclass(frozen=True)
 class Settings:
     database_url: str
-    tenant_id: str
     client_id: str
     client_secret: str
     api_key: str
@@ -27,7 +26,6 @@ class Settings:
 def get_settings() -> Settings:
     required = (
         "DATABASE_URL",
-        "NIS2CHECK_TENANT_ID",
         "NIS2CHECK_CLIENT_ID",
         "NIS2CHECK_CLIENT_SECRET",
         "NIS2CHECK_API_KEY",
@@ -41,7 +39,6 @@ def get_settings() -> Settings:
         raise RuntimeError("NIS2CHECK_API_KEY and EVIDENCE_HASH_KEY must be at least 32 characters.")
     return Settings(
         database_url=environ["DATABASE_URL"],
-        tenant_id=environ["NIS2CHECK_TENANT_ID"].lower(),
         client_id=environ["NIS2CHECK_CLIENT_ID"],
         client_secret=environ["NIS2CHECK_CLIENT_SECRET"],
         api_key=environ["NIS2CHECK_API_KEY"],

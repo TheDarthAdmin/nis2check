@@ -18,6 +18,7 @@ type IdTokenClaims = {
   sub?: string;
   tid?: string;
   nonce?: string;
+  iss?: string;
 };
 
 function sessionKey() {
@@ -75,20 +76,19 @@ export async function clearSession(): Promise<void> {
 
 export async function verifyMicrosoftIdToken(idToken: string, expectedNonce: string): Promise<Session> {
   const config = getConfig();
-  const issuer = `https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/v2.0`;
   const jwks = createRemoteJWKSet(
-    new URL(`https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/discovery/v2.0/keys`),
+    new URL("https://login.microsoftonline.com/organizations/discovery/v2.0/keys"),
   );
   const { payload } = await jwtVerify<IdTokenClaims>(idToken, jwks, {
     algorithms: ["RS256"],
     audience: config.ENTRA_CLIENT_ID,
-    issuer,
   });
 
   if (
     payload.nonce !== expectedNonce ||
-    payload.tid?.toLowerCase() !== config.ENTRA_TENANT_ID ||
-    !payload.sub
+    !payload.sub ||
+    !isTenantId(payload.tid) ||
+    payload.iss !== `https://login.microsoftonline.com/${payload.tid}/v2.0`
   ) {
     throw new Error("Microsoft returned an invalid identity token.");
   }
@@ -99,4 +99,8 @@ export async function verifyMicrosoftIdToken(idToken: string, expectedNonce: str
     subject: payload.sub,
     tenantId: payload.tid,
   };
+}
+
+function isTenantId(value: string | undefined): value is string {
+  return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
 }

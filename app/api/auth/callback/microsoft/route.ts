@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     const config = getConfig();
     const response = await fetch(
-      `https://login.microsoftonline.com/${config.ENTRA_TENANT_ID}/oauth2/v2.0/token`,
+      "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },

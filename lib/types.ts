@@ -1,5 +1,11 @@
 export type Verdict = "PASS" | "PARTIAL" | "FAIL" | "NOT_APPLICABLE" | "INCONCLUSIVE";
 
+export type TenantStatus = {
+  tenantId: string;
+  consentGranted: boolean;
+  consentedAt: string | null;
+};
+
 export type HostedRun = {
   id: string;
   status: "RUNNING" | "COMPLETE" | "FAILED";

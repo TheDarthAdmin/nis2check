@@ -1,6 +1,10 @@
-import { ComparisonFinding, HostedFinding, HostedRun } from "@/lib/types";
+import { ComparisonFinding, HostedFinding, HostedRun, TenantStatus } from "@/lib/types";
 
-class HostedApiError extends Error {}
+export class HostedApiError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+  }
+}
 
 function getHostedApiConfig() {
   const baseUrl = process.env.NIS2CHECK_API_URL?.replace(/\/$/, "");
@@ -11,35 +15,49 @@ function getHostedApiConfig() {
   return { baseUrl, apiKey };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, tenantId?: string, init?: RequestInit): Promise<T> {
   const { baseUrl, apiKey } = getHostedApiConfig();
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
-    headers: { ...init?.headers, "X-Nis2check-Api-Key": apiKey },
+    headers: {
+      ...init?.headers,
+      "X-Nis2check-Api-Key": apiKey,
+      ...(tenantId ? { "X-Nis2check-Tenant-Id": tenantId } : {}),
+    },
     cache: "no-store",
   });
-  if (!response.ok) throw new HostedApiError(`Hosted collection service returned ${response.status}.`);
+  if (!response.ok) throw new HostedApiError(`Hosted collection service returned ${response.status}.`, response.status);
   return response.json() as Promise<T>;
 }
 
-export async function getRuns(): Promise<HostedRun[]> {
-  return (await request<{ runs: HostedRun[] }>("/v1/runs")).runs;
+export async function getTenantStatus(tenantId: string): Promise<TenantStatus> {
+  return request<TenantStatus>(`/v1/tenants/${encodeURIComponent(tenantId)}`);
 }
 
-export async function getRun(runId: string): Promise<HostedRun> {
-  return request<HostedRun>(`/v1/runs/${encodeURIComponent(runId)}`);
+export async function completeTenantOnboarding(tenantId: string): Promise<TenantStatus> {
+  return request<TenantStatus>(`/v1/tenants/${encodeURIComponent(tenantId)}/consent`, undefined, { method: "POST" });
 }
 
-export async function getFindings(runId: string): Promise<HostedFinding[]> {
-  return (await request<{ findings: HostedFinding[] }>(`/v1/runs/${encodeURIComponent(runId)}/findings`)).findings;
+export async function getRuns(tenantId: string): Promise<HostedRun[]> {
+  return (await request<{ runs: HostedRun[] }>("/v1/runs", tenantId)).runs;
 }
 
-export async function getComparison(leftRunId: string, rightRunId: string): Promise<ComparisonFinding[]> {
-  return (await request<{ findings: ComparisonFinding[] }>(`/v1/runs/${encodeURIComponent(leftRunId)}/compare/${encodeURIComponent(rightRunId)}`)).findings;
+export async function getRun(tenantId: string, runId: string): Promise<HostedRun> {
+  return request<HostedRun>(`/v1/runs/${encodeURIComponent(runId)}`, tenantId);
 }
 
-export async function startHostedRun(source: "manual" | "scheduled" = "manual"): Promise<HostedRun> {
-  return request<HostedRun>(`/v1/runs?source=${source}`, { method: "POST" });
+export async function getFindings(tenantId: string, runId: string): Promise<HostedFinding[]> {
+  return (await request<{ findings: HostedFinding[] }>(`/v1/runs/${encodeURIComponent(runId)}/findings`, tenantId)).findings;
 }
 
-export { HostedApiError };
+export async function getComparison(tenantId: string, leftRunId: string, rightRunId: string): Promise<ComparisonFinding[]> {
+  return (await request<{ findings: ComparisonFinding[] }>(`/v1/runs/${encodeURIComponent(leftRunId)}/compare/${encodeURIComponent(rightRunId)}`, tenantId)).findings;
+}
+
+export async function startHostedRun(tenantId: string): Promise<HostedRun> {
+  return request<HostedRun>("/v1/runs", tenantId, { method: "POST" });
+}
+
+export async function startScheduledRuns(): Promise<{ started: number; skipped: number; failed: number }> {
+  return request<{ started: number; skipped: number; failed: number }>("/v1/scheduled-runs", undefined, { method: "POST" });
+}

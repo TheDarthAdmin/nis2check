@@ -32,6 +32,7 @@ class Tenant(Base):
     organization_id: Mapped[UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     entra_tenant_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     evidence_retention_enabled: Mapped[bool] = mapped_column(default=False)
+    consent_granted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

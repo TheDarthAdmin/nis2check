@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from .models import Base
@@ -16,6 +17,10 @@ class Database:
     async def create_tables(self) -> None:
         async with self.engine.begin() as connection:
             await connection.run_sync(Base.metadata.create_all)
+            # Existing single-tenant previews get the multitenant consent state without data loss.
+            await connection.execute(
+                text("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS consent_granted_at TIMESTAMP WITH TIME ZONE")
+            )
 
     async def session(self) -> AsyncIterator[AsyncSession]:
         async with self.sessions() as session:

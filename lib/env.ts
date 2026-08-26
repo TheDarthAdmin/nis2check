@@ -1,6 +1,5 @@
 const requiredKeys = [
   "APP_URL",
-  "ENTRA_TENANT_ID",
   "ENTRA_CLIENT_ID",
   "ENTRA_CLIENT_SECRET",
   "AUTH_SECRET",
@@ -24,7 +23,6 @@ export function getConfig(): AppConfig {
 
   return {
     APP_URL: appUrl,
-    ENTRA_TENANT_ID: process.env.ENTRA_TENANT_ID!.toLowerCase(),
     ENTRA_CLIENT_ID: process.env.ENTRA_CLIENT_ID!,
     ENTRA_CLIENT_SECRET: process.env.ENTRA_CLIENT_SECRET!,
     AUTH_SECRET: process.env.AUTH_SECRET!,

@@ -6,9 +6,10 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST() {
-  if (!(await getSession())) return NextResponse.json({ detail: "Sign in required." }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ detail: "Sign in required." }, { status: 401 });
   try {
-    return NextResponse.json(await startHostedRun());
+    return NextResponse.json(await startHostedRun(session.tenantId));
   } catch (error) {
     const detail = error instanceof HostedApiError ? error.message : "Unable to start collection.";
     return NextResponse.json({ detail }, { status: 503 });
