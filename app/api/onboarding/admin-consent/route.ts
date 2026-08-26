@@ -16,6 +16,7 @@ export async function GET() {
     );
     consentUrl.search = new URLSearchParams({
       client_id: config.ENTRA_CLIENT_ID,
+      scope: "https://graph.microsoft.com/.default",
       redirect_uri: `${config.APP_URL}/api/onboarding/callback/microsoft`,
       state: transaction.state,
     }).toString();

@@ -54,4 +54,5 @@ def test_admin_consent_url_is_scoped_to_the_signed_in_tenant() -> None:
 
     assert url.startswith("https://login.microsoftonline.com/0f0e0d0c-0b0a-4908-8706-050403020100/")
     assert "client_id=fixture-client" in url
+    assert "scope=https%3A%2F%2Fgraph.microsoft.com%2F.default" in url
     assert "state=fixture-state" in url
