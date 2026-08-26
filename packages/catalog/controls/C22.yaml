@@ -1,0 +1,18 @@
+id: C22
+nis2: "21(2)(i)"
+domain: access_management
+title: External sharing of SharePoint and OneDrive content is restricted
+requires: {scopes: [SharePointTenantSettings.Read.All], licence: none}
+queries:
+  settings: {endpoint: /v1.0/admin/sharepoint/settings, paged: false}
+handler: external_sharing
+params: {}
+remediation: https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off
+remediation_steps:
+  - "SharePoint admin center > Policies > Sharing."
+  - "Set the tenant level to 'New and existing guests' at the most permissive, so every external person authenticates."
+  - "Switch the default link type to 'Specific people' and give links an expiry date."
+  - "Handle sites that genuinely need broader sharing one by one, instead of loosening the tenant setting for everyone."
+limits: >
+  Reads the tenant-wide sharing capability. Individual sites can be stricter than the tenant
+  setting but never more permissive, and this control does not enumerate what is shared today.

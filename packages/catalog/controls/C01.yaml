@@ -13,6 +13,11 @@ handler: ca_mfa_all_users
 params:
   require_all_apps: true
 remediation: https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength
+remediation_steps:
+  - "Entra admin center > Protection > Conditional Access > Policies > New policy."
+  - "Assign the policy to All users, exclude only the emergency access accounts, and target All cloud apps."
+  - "Under Grant, choose Require authentication strength > Multifactor authentication."
+  - "Save the policy in report-only mode, check the impact in the What If tool, then switch it to On."
 limits: >
   Detects the presence and scope of a policy. It cannot tell whether the excluded accounts
   are legitimate break-glass accounts.

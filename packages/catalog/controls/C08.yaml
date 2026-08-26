@@ -8,4 +8,9 @@ queries:
 handler: inactive_accounts
 params: {days: 90}
 remediation: https://learn.microsoft.com/entra/identity/monitoring-health/howto-manage-inactive-user-accounts
+remediation_steps:
+  - "Entra admin center > Identity > Users > All users, and add the Last sign-in column to see dormant accounts."
+  - "Check with the owner or manager before acting; shared, service and break-glass accounts sign in rarely by design."
+  - "Disable the account first and keep it disabled for the agreed retention period before deleting it."
+  - "Agree a recurring joiner-mover-leaver review so accounts are disabled when people leave, not months later."
 limits: Requires Entra P1 sign-in data. A 403 is reported as INCONCLUSIVE; accounts without a recorded interactive sign-in are not treated as inactive automatically.

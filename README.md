@@ -7,23 +7,34 @@ doet uitsluitend GET-verzoeken naar Microsoft Graph en verandert nooit tenantcon
 
 ## Controls
 
-| ID | Control | Vereiste scope(s) | Belangrijkste beperking |
-|---|---|---|---|
-| C01 | MFA voor alle gebruikers | Policy.Read.All | Geen validatie van break-glass-legitimiteit. |
-| C02 | Phishing-resistente adminauth | Policy.Read.All | Adminscope niet volledig bewijsbaar. |
-| C03 | Legacy-auth blokkeren | Policy.Read.All | Alleen CA-bewijs. |
-| C04 | Per-user MFA-restanten | User.Read.All | Beta endpoint, gelimiteerde inventaris. |
-| C05 | Global Administrator-limiet | RoleManagement.Read.Directory | Geen zakelijke rechtvaardiging. |
-| C06 | Emergency-accessuitsluitingen | Policy.Read.All | Alleen object-ID's. |
-| C07 | Gastuitnodigingen beperken | Policy.Read.All | Alleen tenantbeleid. |
-| C08 | Inactieve accounts | AuditLog.Read.All, User.Read.All | Vereist Entra P1-sign-indata. |
-| C09 | Schijfversleuteling | DeviceManagementManagedDevices.Read.All | Alleen beheerde devices. |
-| C10 | Update-ringdeadline | DeviceManagementConfiguration.Read.All | Installatie niet bewijsbaar. |
-| C11 | ASR block mode | DeviceManagementConfiguration.Read.All | Profielvormen verschillen. |
-| C12 | Directory audit logs | AuditLog.Read.All | Nooit PASS: Unified Audit is niet via Graph verifieerbaar. |
-| C13 | Security contact | Organization.Read.All | Monitoring niet gevalideerd. |
-| C14 | Third-party apps met hoge rechten | Directory.Read.All | Alleen geselecteerde delegated scopes. |
-| C15 | User consent beperken | Policy.Read.All | Alleen standaardbeleid. |
+22 controls, samen goed voor elk van de tien maatregelen van NIS2 artikel 21(2). Elke control
+draagt naast de bevinding ook `remediation_steps`: de stappen waarmee de tenantbeheerder het
+zelf oplost. De collector voert die stappen nooit uit — hij leest alleen.
+
+| ID | NIS2 | Control | Vereiste scope(s) | Belangrijkste beperking |
+|---|---|---|---|---|
+| C01 | 21(2)(j) | MFA voor alle gebruikers | Policy.Read.All | Geen validatie van break-glass-legitimiteit. |
+| C02 | 21(2)(j) | Phishing-resistente adminauth | Policy.Read.All | Adminscope niet volledig bewijsbaar. |
+| C03 | 21(2)(j) | Legacy-auth blokkeren | Policy.Read.All | Alleen CA-bewijs. |
+| C04 | 21(2)(j) | Per-user MFA-restanten | User.Read.All | Beta endpoint, gelimiteerde inventaris. |
+| C05 | 21(2)(i) | Global Administrator-limiet | RoleManagement.Read.Directory | Geen zakelijke rechtvaardiging. |
+| C06 | 21(2)(i) | Emergency-accessuitsluitingen | Policy.Read.All | Alleen object-ID's. |
+| C07 | 21(2)(i) | Gastuitnodigingen beperken | Policy.Read.All | Alleen tenantbeleid. |
+| C08 | 21(2)(i) | Inactieve accounts | AuditLog.Read.All, User.Read.All | Vereist Entra P1-sign-indata. |
+| C09 | 21(2)(g) | Schijfversleuteling | DeviceManagementManagedDevices.Read.All | Alleen beheerde devices. |
+| C10 | 21(2)(g) | Update-ringdeadline | DeviceManagementConfiguration.Read.All | Installatie niet bewijsbaar. |
+| C11 | 21(2)(g) | ASR block mode | DeviceManagementConfiguration.Read.All | Profielvormen verschillen. |
+| C12 | 21(2)(b) | Directory audit logs | AuditLog.Read.All | Nooit PASS: Unified Audit is niet via Graph verifieerbaar. |
+| C13 | 21(2)(b) | Security contact | Organization.Read.All | Monitoring niet gevalideerd. |
+| C14 | 21(2)(d) | Third-party apps met hoge rechten | Directory.Read.All | Alleen geselecteerde delegated scopes. |
+| C15 | 21(2)(d) | User consent beperken | Policy.Read.All | Alleen standaardbeleid. |
+| C16 | 21(2)(a) | Risicovolle gebruikers opgevolgd | IdentityRiskyUser.Read.All | Alleen de risicostatus van Entra ID Protection (P2). |
+| C17 | 21(2)(c) | OneDrive-retentie na vertrek | SharePointTenantSettings.Read.All | Alleen OneDrive, geen mailbox- of siteretentie. |
+| C18 | 21(2)(e) | App-credentials kort en geldig | Application.Read.All | Alleen registraties van deze tenant. |
+| C19 | 21(2)(f) | Access reviews op privileged access | AccessReview.Read.All | Bestaan en scope, geen genomen beslissingen. |
+| C20 | 21(2)(h) | Zwakke authenticatiemethodes uit | Policy.Read.All | Methodes kunnen op groepen gescopet zijn. |
+| C21 | 21(2)(h) | Legacy-auth uit voor SharePoint | SharePointTenantSettings.Read.All | Alleen de tenantinstelling. |
+| C22 | 21(2)(i) | Externe deling beperkt | SharePointTenantSettings.Read.All | Alleen het tenantniveau, geen site-uitzonderingen. |
 
 ## CLI en container
 

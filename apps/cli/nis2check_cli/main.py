@@ -44,6 +44,11 @@ def echo_summary(result: RunResult) -> None:
         for finding in pending:
             verdict = typer.style(f"{finding.verdict:<14}", fg=VERDICT_COLOUR[finding.verdict])
             typer.echo(f"    {finding.control_id}  {verdict}{finding.title}")
+        typer.echo("")
+        typer.secho(
+            "  The HTML report lists the remediation steps for each of these controls.",
+            fg=typer.colors.BRIGHT_BLACK,
+        )
     else:
         typer.echo("")
         typer.echo("  No control needs follow-up; every check is evidenced or not applicable.")

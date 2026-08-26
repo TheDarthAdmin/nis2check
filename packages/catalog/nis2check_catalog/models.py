@@ -31,4 +31,5 @@ class ControlDefinition(BaseModel):
     handler: str
     params: dict[str, object]
     remediation: HttpUrl
+    remediation_steps: list[str] = Field(min_length=1, max_length=8)
     limits: str

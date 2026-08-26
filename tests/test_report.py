@@ -21,6 +21,7 @@ def finding(control_id: str, verdict: Verdict, domain: str = "authentication") -
         endpoints=["/v1.0/identity/conditionalAccess/policies"],
         remediation="https://learn.microsoft.com/entra/identity",
         limits="Reads policy state only.",
+        remediation_steps=[f"Open the admin center and fix {control_id}."],
         raw_evidence={"value": [{"id": "policy-1"}]},
     )
 
@@ -86,6 +87,13 @@ def test_report_shows_the_evidence_and_its_limits() -> None:
     assert 'data-verdict="FAIL"' in html
     assert "Authentication" in html and "Devices" in html
     assert "Needs follow-up" in html
+
+
+def test_report_shows_how_to_remediate_a_finding() -> None:
+    html = render_html(run_result(finding("C01", Verdict.FAIL)), TEMPLATES)
+
+    assert "How to remediate" in html
+    assert "Open the admin center and fix C01." in html
 
 
 def test_report_says_so_when_nothing_needs_follow_up() -> None:

@@ -8,4 +8,9 @@ queries:
 handler: ca_phishing_resistant_admins
 params: {}
 remediation: https://learn.microsoft.com/entra/identity/authentication/concept-authentication-strengths
+remediation_steps:
+  - "Register FIDO2 keys, passkeys or Windows Hello for Business for every administrator first."
+  - "Entra admin center > Protection > Conditional Access > Policies > New policy."
+  - "Assign the policy to the privileged directory roles instead of to individual accounts."
+  - "Under Grant, choose Require authentication strength > Phishing-resistant MFA, then enable the policy."
 limits: Detects an enabled phishing-resistant Conditional Access policy but cannot prove its administrator scope without privileged-role correlation.

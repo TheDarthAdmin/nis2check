@@ -8,4 +8,9 @@ queries:
 handler: high_privilege_apps
 params: {}
 remediation: https://learn.microsoft.com/entra/identity/enterprise-apps/manage-consent-requests
+remediation_steps:
+  - "Entra admin center > Identity > Applications > Enterprise applications > Permissions, and open the applications listed in the evidence."
+  - "For each one, ask which permission the application really needs and revoke the high-privilege grants it does not."
+  - "Replace tenant-wide consent with least-privileged, scoped permissions where the application supports it."
+  - "Record the business owner and a review date for every application that keeps a high-privilege grant."
 limits: Detects selected delegated high-privilege scopes only. It does not evaluate application permissions or whether an app is externally supplied.

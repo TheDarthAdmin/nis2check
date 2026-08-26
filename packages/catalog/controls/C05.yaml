@@ -9,4 +9,9 @@ queries:
 handler: global_admin_count
 params: {maximum_standing: 4}
 remediation: https://learn.microsoft.com/entra/identity/role-based-access-control/privileged-identity-management/pim-configure
+remediation_steps:
+  - "Entra admin center > Identity > Roles and admins > Global Administrator, and list the permanent assignments."
+  - "Give each administrator the least privileged role that fits their work; most tasks do not need Global Administrator."
+  - "Move the remaining administrators to eligible assignments in Privileged Identity Management, with approval and justification."
+  - "Keep only the emergency access accounts as permanent assignments."
 limits: Counts current assignments only; it cannot assess whether each assignment is justified.

@@ -1,0 +1,18 @@
+id: C20
+nis2: "21(2)(h)"
+domain: cryptography
+title: Weak authentication methods are disabled
+requires: {scopes: [Policy.Read.All], licence: none}
+queries:
+  methods: {endpoint: /v1.0/policies/authenticationMethodsPolicy, paged: false}
+handler: weak_authentication_methods
+params: {weak: [Sms, Voice, Email], strong: [Fido2, X509Certificate]}
+remediation: https://learn.microsoft.com/entra/identity/authentication/concept-authentication-methods-manage
+remediation_steps:
+  - "Entra admin center > Protection > Authentication methods > Policies."
+  - "Enable FIDO2 security keys, passkeys or certificate-based authentication and roll them out to administrators first."
+  - "Watch Authentication methods > User registration details until users hold a stronger method, then disable SMS, Voice call and Email OTP."
+  - "Keep Temporary Access Pass enabled for onboarding and recovery, so nobody has to fall back to SMS."
+limits: >
+  Reads the tenant authentication methods policy. A method reported as enabled can still be
+  scoped to a group, and this control cannot see which method a user actually uses to sign in.

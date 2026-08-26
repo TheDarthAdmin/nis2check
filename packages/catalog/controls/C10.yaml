@@ -8,4 +8,9 @@ queries:
 handler: update_rings
 params: {}
 remediation: https://learn.microsoft.com/mem/intune/protect/windows-update-for-business-configure
+remediation_steps:
+  - "Intune admin center > Devices > Windows > Update rings for Windows 10 and later."
+  - "Set a deadline in days for quality and feature updates, plus a grace period for devices that are off."
+  - "Keep a small pilot ring ahead of the broad ring so a bad update is caught early."
+  - "Assign the rings to every managed Windows device, including the ones used by administrators."
 limits: Detects a configured feature-update deadline but cannot prove timely installation on every endpoint.

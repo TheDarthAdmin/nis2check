@@ -8,4 +8,9 @@ queries:
 handler: ca_block_legacy_auth
 params: {}
 remediation: https://learn.microsoft.com/entra/identity/conditional-access/policy-block-legacy-authentication
+remediation_steps:
+  - "Entra admin center > Identity > Monitoring & health > Sign-in logs, filter Client app on the legacy values to find what still uses it."
+  - "Migrate or retire those clients and mailboxes first; blocking legacy authentication breaks them."
+  - "Entra admin center > Protection > Conditional Access > New policy: Conditions > Client apps > Exchange ActiveSync clients and Other clients."
+  - "Under Grant, choose Block access, and enable the policy for all users except the emergency access accounts."
 limits: Detects Conditional Access policies only; it cannot detect protocol exceptions outside Conditional Access.

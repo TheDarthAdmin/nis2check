@@ -8,4 +8,9 @@ queries:
 handler: user_consent
 params: {}
 remediation: https://learn.microsoft.com/entra/identity/enterprise-apps/configure-user-consent
+remediation_steps:
+  - "Entra admin center > Identity > Applications > Enterprise applications > Consent and permissions > User consent settings."
+  - "Select 'Allow user consent for apps from verified publishers, for selected permissions' or 'Do not allow user consent'."
+  - "Turn on the admin consent workflow so users can request an application instead of being blocked silently."
+  - "Assign reviewers to that workflow and agree how quickly they answer."
 limits: Evaluates the default user-consent policy only; administrator consent and consent workflow operation are outside this check.

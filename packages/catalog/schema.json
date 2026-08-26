@@ -2,19 +2,58 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "nis2", "domain", "title", "requires", "queries", "handler", "params", "remediation", "limits"],
+  "required": [
+    "id",
+    "nis2",
+    "domain",
+    "title",
+    "requires",
+    "queries",
+    "handler",
+    "params",
+    "remediation",
+    "remediation_steps",
+    "limits"
+  ],
   "properties": {
-    "id": {"type": "string", "pattern": "^C[0-9]{2}$"},
-    "nis2": {"type": "string", "minLength": 1},
-    "domain": {"type": "string", "minLength": 1},
-    "title": {"type": "string", "minLength": 1},
+    "id": {
+      "type": "string",
+      "pattern": "^C[0-9]{2}$"
+    },
+    "nis2": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
     "requires": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["scopes", "licence"],
+      "required": [
+        "scopes",
+        "licence"
+      ],
       "properties": {
-        "scopes": {"type": "array", "items": {"type": "string"}},
-        "licence": {"enum": ["none", "entra_p1", "entra_p2", "intune"]}
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "licence": {
+          "enum": [
+            "none",
+            "entra_p1",
+            "entra_p2",
+            "intune"
+          ]
+        }
       }
     },
     "queries": {
@@ -23,16 +62,44 @@
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["endpoint", "paged"],
+        "required": [
+          "endpoint",
+          "paged"
+        ],
         "properties": {
-          "endpoint": {"type": "string", "pattern": "^/"},
-          "paged": {"type": "boolean"}
+          "endpoint": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "paged": {
+            "type": "boolean"
+          }
         }
       }
     },
-    "handler": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
-    "params": {"type": "object"},
-    "remediation": {"type": "string", "format": "uri"},
-    "limits": {"type": "string", "minLength": 1}
+    "handler": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "params": {
+      "type": "object"
+    },
+    "remediation": {
+      "type": "string",
+      "format": "uri"
+    },
+    "remediation_steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "limits": {
+      "type": "string",
+      "minLength": 1
+    }
   }
 }

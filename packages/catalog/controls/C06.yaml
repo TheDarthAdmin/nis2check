@@ -8,4 +8,9 @@ queries:
 handler: break_glass_exclusions
 params: {minimum_accounts: 2}
 remediation: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+remediation_steps:
+  - "Create at least two cloud-only emergency access accounts with long unique credentials stored offline."
+  - "Entra admin center > Protection > Conditional Access: exclude those accounts in every policy that could lock them out."
+  - "Register phishing-resistant credentials on them and alert on their sign-ins."
+  - "Test the accounts on a schedule and record the test as evidence."
 limits: Finds excluded object IDs only. It cannot determine whether they are legitimate, secured break-glass accounts.

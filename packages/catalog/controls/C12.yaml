@@ -10,4 +10,9 @@ queries:
 handler: directory_audit_logs
 params: {}
 remediation: https://learn.microsoft.com/purview/audit-solutions-overview
+remediation_steps:
+  - "Microsoft Purview portal > Audit: confirm auditing is turned on for the tenant."
+  - "Entra admin center > Identity > Monitoring & health > Diagnostic settings: export AuditLogs and SignInLogs to a Log Analytics workspace or storage account."
+  - "Set a retention period that matches your NIS2 incident-reporting duties; the Entra portal keeps only 7 to 30 days by itself."
+  - "Record in the incident procedure where the logs are, who can read them and how fast they can be searched."
 limits: "Never PASS: the Microsoft Purview unified audit log cannot be verified through Microsoft Graph."

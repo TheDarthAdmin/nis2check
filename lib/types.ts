@@ -26,6 +26,7 @@ export type HostedFinding = {
   rationale: string;
   endpoints: string[];
   remediation: string;
+  remediationSteps: string[];
   limits: string;
   objectIds: string[];
   counts: Record<string, number>;

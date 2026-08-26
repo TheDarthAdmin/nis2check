@@ -8,4 +8,9 @@ queries:
 handler: security_contact
 params: {}
 remediation: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+remediation_steps:
+  - "Agree which monitored shared mailbox receives Microsoft security and compliance notices; never a personal address."
+  - "Set that address as the tenant security and compliance notification address (Microsoft 365 admin center > Settings > Org settings, or Graph PATCH /organization)."
+  - "Add a second address for the deputy so a single absence does not stop the notification."
+  - "Confirm the mailbox is watched outside office hours and is named in the incident procedure."
 limits: Confirms that one or more contact addresses are configured, not their ownership, monitoring, or escalation process.

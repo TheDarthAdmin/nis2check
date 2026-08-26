@@ -1,0 +1,18 @@
+id: C17
+nis2: "21(2)(c)"
+domain: continuity
+title: A departed user's OneDrive content is retained
+requires: {scopes: [SharePointTenantSettings.Read.All], licence: none}
+queries:
+  settings: {endpoint: /v1.0/admin/sharepoint/settings, paged: false}
+handler: onedrive_retention
+params: {minimum_days: 90}
+remediation: https://learn.microsoft.com/sharepoint/set-retention-for-deleted-onedrive
+remediation_steps:
+  - "SharePoint admin center > Settings > OneDrive retention for deleted users."
+  - "Set the retention to at least the period your continuity plan needs; the Microsoft default is 30 days and the maximum is 3650."
+  - "Name the person who can restore a departed user's OneDrive, and record how long a restore takes."
+  - "Check that mailboxes, Teams and SharePoint sites are covered by a Microsoft Purview retention policy as well; this setting only covers OneDrive."
+limits: >
+  Reads the tenant retention period for a deleted user's OneDrive only. It says nothing about
+  mailbox, Teams or SharePoint site retention, and nothing about restore tests.

@@ -9,6 +9,8 @@ from typing import Any
 
 from ..models import HandlerResult, Verdict
 from .registry import register
+from .support import integer_param as _integer
+from .support import result as _result
 
 
 def _items(results: dict[str, list[dict[str, Any]]], name: str) -> list[dict[str, Any]]:
@@ -18,15 +20,6 @@ def _items(results: dict[str, list[dict[str, Any]]], name: str) -> list[dict[str
 def _ca_block(policy: dict[str, Any]) -> bool:
     grants = policy.get("grantControls", {})
     return policy.get("state") == "enabled" and grants.get("builtInControls") == ["block"]
-
-
-def _result(verdict: Verdict, rationale: str, results: dict[str, list[dict[str, Any]]]) -> HandlerResult:
-    return HandlerResult(verdict=verdict, rationale=rationale, raw_evidence=results)
-
-
-def _integer(params: dict[str, object], key: str, default: int) -> int:
-    value = params.get(key, default)
-    return value if isinstance(value, int) else default
 
 
 @register("ca_phishing_resistant_admins")

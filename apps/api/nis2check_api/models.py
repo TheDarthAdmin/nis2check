@@ -82,6 +82,7 @@ class FindingRecord(Base):
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
     endpoints: Mapped[list[str]] = mapped_column(JSONB, default=list)
     remediation: Mapped[str] = mapped_column(Text, nullable=False)
+    remediation_steps: Mapped[list[str]] = mapped_column(JSONB, default=list)
     limits: Mapped[str] = mapped_column(Text, nullable=False)
     object_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     counts: Mapped[dict[str, int]] = mapped_column(JSONB, default=dict)

@@ -8,4 +8,9 @@ queries:
 handler: per_user_mfa_remainder
 params: {max_users: 5000}
 remediation: https://learn.microsoft.com/entra/identity/authentication/howto-mfa-userstates
+remediation_steps:
+  - "Confirm a Conditional Access policy already requires MFA for the accounts listed in the evidence."
+  - "Entra admin center > Identity > Users > Per-user MFA."
+  - "Set each account that is Enabled or Enforced to Disabled, so Conditional Access is the only MFA decision point."
+  - "Leave registered methods in place; disabling per-user MFA does not remove them."
 limits: Uses a beta Graph property and stops at the configured user cap; it is therefore not a complete tenant inventory for large tenants.

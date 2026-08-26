@@ -8,4 +8,9 @@ queries:
 handler: guest_access
 params: {}
 remediation: https://learn.microsoft.com/entra/external-id/external-collaboration-settings-configure
+remediation_steps:
+  - "Entra admin center > Identity > External Identities > External collaboration settings."
+  - "Set Guest invite restrictions to at most 'Only users assigned to specific admin roles can invite guest users'."
+  - "Limit what guests can read by setting Guest user access to the most restrictive level your collaboration allows."
+  - "Review the guests that already exist and remove the ones no longer needed."
 limits: Evaluates the tenant-wide invitation setting, not individual guest memberships or access reviews.

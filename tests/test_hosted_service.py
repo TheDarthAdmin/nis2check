@@ -1,5 +1,8 @@
+from uuid import uuid4
+
+from nis2check_api.models import FindingRecord
 from nis2check_api.onboarding import admin_consent_url
-from nis2check_api.service import evidence_summary
+from nis2check_api.service import evidence_summary, finding_view
 from nis2check_api.settings import Settings
 
 
@@ -27,6 +30,48 @@ def test_evidence_summary_stores_only_counts_and_keyed_pseudonyms() -> None:
     assert len(object_ids) == 3
     assert all(item.startswith("hmac-sha256:") for item in object_ids)
     assert all("policy" not in item and "user" not in item for item in object_ids)
+
+
+def test_finding_view_exposes_the_remediation_steps() -> None:
+    record = FindingRecord(
+        id=uuid4(),
+        control_id="C01",
+        nis2="21(2)(j)",
+        domain="authentication",
+        title="Conditional Access requires MFA for all users",
+        verdict="FAIL",
+        rationale="No policy covers every user.",
+        endpoints=["/v1.0/identity/conditionalAccess/policies"],
+        remediation="https://learn.microsoft.com/entra",
+        remediation_steps=["Create the policy.", "Enable it."],
+        limits="Policy state only.",
+        object_ids=[],
+        counts={},
+    )
+
+    view = finding_view(record)
+
+    assert view["remediationSteps"] == ["Create the policy.", "Enable it."]
+
+
+def test_finding_view_tolerates_a_finding_stored_before_remediation_steps_existed() -> None:
+    record = FindingRecord(
+        id=uuid4(),
+        control_id="C01",
+        nis2="21(2)(j)",
+        domain="authentication",
+        title="Conditional Access requires MFA for all users",
+        verdict="FAIL",
+        rationale="No policy covers every user.",
+        endpoints=[],
+        remediation="https://learn.microsoft.com/entra",
+        remediation_steps=None,
+        limits="Policy state only.",
+        object_ids=[],
+        counts={},
+    )
+
+    assert finding_view(record)["remediationSteps"] == []
 
 
 def test_settings_translate_neon_database_url_for_asyncpg() -> None:

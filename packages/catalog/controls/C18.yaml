@@ -1,0 +1,19 @@
+id: C18
+nis2: "21(2)(e)"
+domain: vulnerability_management
+title: Application credentials are short-lived and current
+requires: {scopes: [Application.Read.All], licence: none}
+queries:
+  applications: {endpoint: "/v1.0/applications?$select=id,passwordCredentials,keyCredentials&$top=200", paged: true}
+handler: application_credentials
+params: {max_lifetime_days: 365}
+remediation: https://learn.microsoft.com/entra/identity-platform/certificate-credentials
+remediation_steps:
+  - "Entra admin center > Identity > Applications > App registrations > Certificates & secrets, for the applications in the evidence."
+  - "Replace long-lived client secrets with a certificate, or with workload identity federation where the platform supports it."
+  - "Keep any remaining secret short-lived, and record its owner and renewal date."
+  - "Delete credentials that are expired or unused instead of leaving them on the registration."
+limits: >
+  Reads credential metadata of application registrations owned by this tenant. It cannot see
+  credentials of multi-tenant applications registered elsewhere, and it does not prove a
+  credential is actually in use.

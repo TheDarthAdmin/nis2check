@@ -12,6 +12,12 @@ export function FindingDetail({ runId, finding, previous, next }: { runId: strin
       <p className="verdict-line"><Status verdict={finding.verdict} /> <span className="muted">{VERDICT_HINT[finding.verdict]}</span></p>
     </section>
     <section className="card"><h2>Rationale</h2><p>{finding.rationale}</p></section>
+    {finding.remediationSteps?.length ? <section className="card remediation-card">
+      <h2>{finding.verdict === "PASS" || finding.verdict === "NOT_APPLICABLE" ? "How this control is kept in place" : "How to remediate"}</h2>
+      <p className="muted">Every step is a change you make in your own tenant; Nis2Check only reads.</p>
+      <ol className="steps">{finding.remediationSteps.map((step) => <li key={step}>{step}</li>)}</ol>
+      <a className="primary-button" href={finding.remediation} target="_blank" rel="noreferrer">Microsoft guidance for {finding.controlId} ↗</a>
+    </section> : null}
     <section className="note"><b>What this check cannot tell you</b><p>{finding.limits}</p></section>
     <section>
       <h2>Queried endpoints</h2>
@@ -27,7 +33,6 @@ export function FindingDetail({ runId, finding, previous, next }: { runId: strin
       </dl>
     </section>
     <section className="detail-actions">
-      <a className="primary-button" href={finding.remediation} target="_blank" rel="noreferrer">Open Microsoft remediation guidance ↗</a>
       <Link className="secondary-button" href={`/runs/${runId}`}>Back to all controls</Link>
     </section>
     <nav className="detail-nav" aria-label="Other controls in this run">

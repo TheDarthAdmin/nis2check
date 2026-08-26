@@ -74,6 +74,7 @@ class CollectorEngine:
             rationale=rationale,
             endpoints=[query.endpoint for query in control.queries.values()],
             remediation=str(control.remediation),
+            remediation_steps=list(control.remediation_steps),
             limits=control.limits,
             raw_evidence=raw_evidence,
         )

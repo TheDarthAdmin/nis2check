@@ -1,0 +1,18 @@
+id: C16
+nis2: "21(2)(a)"
+domain: risk_management
+title: Users flagged as at risk are investigated
+requires: {scopes: [IdentityRiskyUser.Read.All], licence: entra_p2}
+queries:
+  risky: {endpoint: "/v1.0/identityProtection/riskyUsers?$select=id,riskLevel,riskState,riskLastUpdatedDateTime&$top=500", paged: true}
+handler: risky_users
+params: {max_users: 2000}
+remediation: https://learn.microsoft.com/entra/id-protection/howto-identity-protection-remediate-unblock
+remediation_steps:
+  - "Entra admin center > Protection > Identity Protection > Risky users."
+  - "Work through the users still in the At risk state: confirm compromise, or dismiss the risk once you have investigated it."
+  - "For a confirmed compromise, reset the credentials, revoke the sessions and check what the account did while it was exposed."
+  - "Add a risk-based Conditional Access policy so a future high risk forces MFA or a password change without waiting for a human."
+limits: >
+  Reports the risk state Entra ID Protection holds today. It cannot tell whether a user was
+  investigated outside Entra, and risk detections need Entra ID P2.

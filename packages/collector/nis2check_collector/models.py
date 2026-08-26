@@ -34,6 +34,7 @@ class Finding(BaseModel):
     rationale: str = Field(min_length=1)
     endpoints: list[str]
     remediation: str
+    remediation_steps: list[str] = Field(default_factory=list)
     limits: str
     raw_evidence: dict[str, Any] = Field(default_factory=dict)
 

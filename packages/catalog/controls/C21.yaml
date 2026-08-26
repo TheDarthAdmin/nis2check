@@ -1,0 +1,18 @@
+id: C21
+nis2: "21(2)(h)"
+domain: cryptography
+title: Legacy authentication protocols are blocked for SharePoint and OneDrive
+requires: {scopes: [SharePointTenantSettings.Read.All], licence: none}
+queries:
+  settings: {endpoint: /v1.0/admin/sharepoint/settings, paged: false}
+handler: sharepoint_legacy_auth
+params: {}
+remediation: https://learn.microsoft.com/powershell/module/sharepoint-online/set-spotenant
+remediation_steps:
+  - "Find out what still uses legacy authentication against SharePoint: old sync clients, SharePoint Add-ins and scripted integrations are the usual ones."
+  - "Migrate those to modern authentication, or move them to an app registration with application permissions."
+  - "SharePoint admin center > Policies > Access control > Apps that don't use modern authentication > Block access."
+  - "Re-test the integrations that read or write SharePoint content after the change."
+limits: >
+  Reads the tenant-level setting only. It does not show which clients still attempt legacy
+  authentication, and site-level exceptions are outside this check.

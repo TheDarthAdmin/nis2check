@@ -1,0 +1,18 @@
+id: C19
+nis2: "21(2)(f)"
+domain: governance
+title: Access reviews cover privileged access
+requires: {scopes: [AccessReview.Read.All], licence: entra_p2}
+queries:
+  definitions: {endpoint: "/v1.0/identityGovernance/accessReviews/definitions?$top=100", paged: true}
+handler: privileged_access_reviews
+params: {}
+remediation: https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-create-roles-and-resource-roles-review
+remediation_steps:
+  - "Entra admin center > Identity governance > Privileged Identity Management > Microsoft Entra roles > Access reviews > New."
+  - "Scope the review to the privileged directory roles and let it recur, quarterly for most organisations."
+  - "Pick reviewers who know the business need, and turn on auto-apply so unapproved access is really removed."
+  - "Keep the completed review reports; they are the evidence that your measures are assessed, not only defined."
+limits: >
+  Detects that an access review exists and what it is scoped to. It cannot tell whether the
+  reviewers made decisions or whether those decisions were applied.

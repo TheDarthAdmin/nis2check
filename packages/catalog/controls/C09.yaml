@@ -8,4 +8,9 @@ queries:
 handler: device_encryption
 params: {}
 remediation: https://learn.microsoft.com/mem/intune/protect/encrypt-devices
+remediation_steps:
+  - "Intune admin center > Devices > Compliance policies: require encryption in the policy for each platform."
+  - "Intune admin center > Devices > Configuration: deploy a BitLocker or FileVault profile that escrows the recovery key to Entra ID."
+  - "Assign both to all managed devices, with a short grace period."
+  - "Track the devices that stay non-compliant in Devices > Monitor and fix them individually."
 limits: Reports Intune managed-device state; it does not verify encryption on unmanaged or unsupported devices.

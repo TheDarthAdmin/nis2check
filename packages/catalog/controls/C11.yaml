@@ -8,4 +8,9 @@ queries:
 handler: asr_rules
 params: {}
 remediation: https://learn.microsoft.com/defender-endpoint/attack-surface-reduction-rules-deployment
+remediation_steps:
+  - "Intune admin center > Endpoint security > Attack surface reduction > Create policy."
+  - "Deploy the rules in Audit first and review the hits in the Defender portal for a week or two."
+  - "Switch the rules that produce no legitimate blocks to Block, and add exclusions for the ones that do."
+  - "Assign the policy to all managed devices, not only to a pilot group."
 limits: Graph profile shapes vary by policy type. Rules not returned in the queried profile shape are not evaluated.

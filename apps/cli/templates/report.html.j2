@@ -49,6 +49,11 @@ article.FAIL{border-left-color:var(--fail)}article.PARTIAL{border-left-color:var
 .fields{margin:.9rem 0 0;display:grid;gap:.55rem;font-size:.88rem}
 .fields dt{color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
 .fields dd{margin:.2rem 0 0}
+.remediation{margin:.9rem 0 0;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;background:var(--soft);padding:.75rem .9rem}
+.remediation.settled{opacity:.72}
+.remediation h4{margin:0 0 .4rem;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.remediation ol{margin:0;padding-left:1.15rem;display:grid;gap:.3rem;font-size:.88rem}
+.remediation p{margin:.6rem 0 0}
 code{background:var(--soft);border-radius:4px;padding:.1rem .35rem;font-size:.82rem}
 code,pre{white-space:pre-wrap;word-break:break-word}
 pre{background:var(--soft);border-radius:6px;padding:.7rem;font-size:.8rem;max-height:26rem;overflow:auto}
@@ -109,8 +114,14 @@ footer{margin-top:2rem;border-top:1px solid var(--line);padding-top:1rem;color:v
     <dl class="fields">
       <div><dt>Queried endpoints</dt><dd>{% for endpoint in finding.endpoints %}<code>{{ endpoint }}</code>{% if not loop.last %} {% endif %}{% endfor %}</dd></div>
       <div><dt>Limitation of this check</dt><dd>{{ finding.limits }}</dd></div>
-      <div><dt>Remediation</dt><dd><a href="{{ finding.remediation }}" rel="noreferrer">Microsoft guidance for {{ finding.control_id }} ↗</a></dd></div>
     </dl>
+    {%- if finding.remediation_steps %}
+    <div class="remediation {{ 'settled' if finding.verdict in ('PASS', 'NOT_APPLICABLE') else 'needed' }}">
+      <h4>How to remediate</h4>
+      <ol>{% for step in finding.remediation_steps %}<li>{{ step }}</li>{% endfor %}</ol>
+      <p class="meta"><a href="{{ finding.remediation }}" rel="noreferrer">Microsoft guidance for {{ finding.control_id }} ↗</a></p>
+    </div>
+    {%- endif %}
     <details><summary>Raw evidence as returned by Microsoft Graph</summary><pre>{{ finding.raw_evidence | tojson(indent=2) }}</pre></details>
   </article>
   {%- endfor %}
