@@ -1,7 +1,8 @@
 import { AppShell } from "@/components/app-shell";
+import { ServiceUnavailable } from "@/components/service-unavailable";
 import { ComparePicker } from "@/components/compare-picker";
 import { CompareTable } from "@/components/compare-table";
-import { getComparison, getRuns, HostedApiError } from "@/lib/hosted-api";
+import { getComparison, getRuns } from "@/lib/hosted-api";
 import { requireSession } from "@/lib/require-session";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,6 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
       <CompareTable findings={findings} currentRunId={later} />
     </AppShell>;
   } catch (error) {
-    const detail = error instanceof HostedApiError ? "Check the hosted API connection and try again." : "An unexpected error occurred.";
-    return <AppShell><section className="empty-state"><div className="eyebrow">Collection service unavailable</div><h1>Runs cannot be compared.</h1><p>{detail}</p></section></AppShell>;
+    return <AppShell><ServiceUnavailable error={error} eyebrow="Run comparison" /></AppShell>;
   }
 }

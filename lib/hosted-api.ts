@@ -1,7 +1,10 @@
 import { ComparisonFinding, HostedFinding, HostedRun, TenantStatus } from "@/lib/types";
 
+/** Why a hosted call failed, so the interface can say something more useful than "try again". */
+export type HostedApiFailure = "unconfigured" | "unreachable" | "rejected";
+
 export class HostedApiError extends Error {
-  constructor(message: string, readonly status?: number) {
+  constructor(message: string, readonly kind: HostedApiFailure, readonly status?: number) {
     super(message);
   }
 }
@@ -10,26 +13,31 @@ function getHostedApiConfig() {
   const baseUrl = process.env.NIS2CHECK_API_URL?.replace(/\/$/, "");
   const apiKey = process.env.NIS2CHECK_API_KEY;
   if (!baseUrl || !apiKey) {
-    throw new HostedApiError("The hosted collection service has not been configured.");
+    throw new HostedApiError("NIS2CHECK_API_URL and NIS2CHECK_API_KEY are not both set on this deployment.", "unconfigured");
   }
   return { baseUrl, apiKey };
 }
 
 async function request<T>(path: string, tenantId?: string, init?: RequestInit): Promise<T> {
   const { baseUrl, apiKey } = getHostedApiConfig();
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: {
-      ...init?.headers,
-      "X-Nis2check-Api-Key": apiKey,
-      ...(tenantId ? { "X-Nis2check-Tenant-Id": tenantId } : {}),
-    },
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        "X-Nis2check-Api-Key": apiKey,
+        ...(tenantId ? { "X-Nis2check-Tenant-Id": tenantId } : {}),
+      },
+      cache: "no-store",
+    });
+  } catch {
+    throw new HostedApiError("The collection service did not answer.", "unreachable");
+  }
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { detail?: unknown } | null;
     const detail = typeof payload?.detail === "string" ? payload.detail : `Hosted collection service returned ${response.status}.`;
-    throw new HostedApiError(detail, response.status);
+    throw new HostedApiError(detail, "rejected", response.status);
   }
   return response.json() as Promise<T>;
 }

@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from nis2check_api.database import SCHEMA_PATCHES
 from nis2check_api.models import FindingRecord
 from nis2check_api.onboarding import admin_consent_url
 from nis2check_api.service import evidence_summary, finding_view
@@ -101,3 +102,18 @@ def test_admin_consent_url_is_scoped_to_the_signed_in_tenant() -> None:
     assert "client_id=fixture-client" in url
     assert "scope=https%3A%2F%2Fgraph.microsoft.com%2F.default" in url
     assert "state=fixture-state" in url
+
+
+def test_schema_patches_stay_idempotent() -> None:
+    """They run on every start, against databases in every state this schema has had."""
+    for statement in SCHEMA_PATCHES:
+        assert statement.startswith("ALTER TABLE "), statement
+        assert "IF NOT EXISTS" in statement, statement
+
+
+def test_columns_added_after_the_first_release_are_patched_in() -> None:
+    """`create_all` creates missing tables but never alters one that already exists."""
+    patched = " ".join(SCHEMA_PATCHES)
+
+    assert "findings" in patched and "remediation_steps" in patched
+    assert "tenants" in patched and "consent_granted_at" in patched

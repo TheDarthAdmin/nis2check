@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { ServiceUnavailable } from "@/components/service-unavailable";
 import { FindingDetail } from "@/components/finding-detail";
 import { groupByDomain } from "@/lib/findings";
 import { getFindings, HostedApiError } from "@/lib/hosted-api";
@@ -17,6 +18,6 @@ export default async function Finding({ params }: { params: Promise<{ id: string
     return <AppShell><FindingDetail runId={id} finding={ordered[index]} previous={ordered[index - 1]} next={ordered[index + 1]} /></AppShell>;
   } catch (error) {
     if (!(error instanceof HostedApiError) || error.status === 404) notFound();
-    return <AppShell><section className="empty-state"><div className="eyebrow">Collection service unavailable</div><h1>Evidence cannot be loaded.</h1><p>Check the hosted API connection and try again.</p></section></AppShell>;
+    return <AppShell><ServiceUnavailable error={error} /></AppShell>;
   }
 }
