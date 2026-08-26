@@ -11,7 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from nis2check_catalog import load_catalog
-from nis2check_collector.auth import MsalAuthenticator
+from nis2check_collector.auth import AuthenticationError, MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
 from nis2check_collector.models import Finding, RunResult
@@ -106,6 +106,8 @@ async def _collect(settings: Settings, tenant: Tenant) -> RunResult:
             MsalAuthenticator(tenant.entra_tenant_id, settings.client_id).acquire_client_secret_token,
             settings.client_secret,
         )
+    except AuthenticationError as error:
+        raise CollectionError(str(error)) from error
     except Exception as error:
         raise CollectionError("Unable to acquire the Microsoft Graph application token.") from error
     async with AsyncGraphClient(token) as graph:
@@ -140,9 +142,9 @@ async def create_run(
     await session.refresh(run)
     try:
         result = await _collect(settings, tenant)
-    except CollectionError:
+    except CollectionError as error:
         run.status = "FAILED"
-        run.failure_reason = "Unable to acquire the Microsoft Graph application token."
+        run.failure_reason = str(error)
         run.completed_at = datetime.now(UTC)
         await session.commit()
         raise

@@ -26,7 +26,11 @@ async function request<T>(path: string, tenantId?: string, init?: RequestInit): 
     },
     cache: "no-store",
   });
-  if (!response.ok) throw new HostedApiError(`Hosted collection service returned ${response.status}.`, response.status);
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { detail?: unknown } | null;
+    const detail = typeof payload?.detail === "string" ? payload.detail : `Hosted collection service returned ${response.status}.`;
+    throw new HostedApiError(detail, response.status);
+  }
   return response.json() as Promise<T>;
 }
 

@@ -12,6 +12,6 @@ export async function POST() {
     return NextResponse.json(await startHostedRun(session.tenantId));
   } catch (error) {
     const detail = error instanceof HostedApiError ? error.message : "Unable to start collection.";
-    return NextResponse.json({ detail }, { status: 503 });
+    return NextResponse.json({ detail }, { status: error instanceof HostedApiError ? error.status || 503 : 503 });
   }
 }
