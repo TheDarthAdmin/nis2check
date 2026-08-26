@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import hmac
 from collections.abc import Iterable
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -15,7 +15,7 @@ from nis2check_collector.auth import AuthenticationError, MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
 from nis2check_collector.models import Finding, RunResult
-from sqlalchemy import Select, desc, select
+from sqlalchemy import Select, desc, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +24,7 @@ from .settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
 CATALOGUE = ROOT / "packages" / "catalog" / "controls"
+RUN_RECOVERY_TIMEOUT = timedelta(minutes=10)
 
 
 class ActiveRunError(RuntimeError):
@@ -116,11 +117,35 @@ async def _collect(settings: Settings, tenant: Tenant) -> RunResult:
         )
 
 
+async def recover_interrupted_runs(session: AsyncSession, tenant: Tenant) -> None:
+    """Release runs that cannot still be executing in the hosted runtime.
+
+    Vercel functions have a shorter maximum execution time than this timeout.  A run
+    older than the timeout is therefore an interrupted invocation, not a live one.
+    """
+    now = datetime.now(UTC)
+    await session.execute(
+        update(Run)
+        .where(
+            Run.tenant_id == tenant.id,
+            Run.status == "RUNNING",
+            Run.created_at < now - RUN_RECOVERY_TIMEOUT,
+        )
+        .values(
+            status="FAILED",
+            failure_reason="Collection was interrupted before it could complete.",
+            completed_at=now,
+        )
+    )
+    await session.commit()
+
+
 async def create_run(
     session: AsyncSession, settings: Settings, tenant: Tenant, source: str = "manual"
 ) -> dict[str, object]:
     if tenant.consent_granted_at is None:
         raise ConsentRequiredError("A tenant administrator must grant Microsoft Graph consent first.")
+    await recover_interrupted_runs(session, tenant)
     if source == "scheduled":
         today = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
         existing = await session.scalar(
@@ -148,6 +173,12 @@ async def create_run(
         run.completed_at = datetime.now(UTC)
         await session.commit()
         raise
+    except Exception as error:
+        run.status = "FAILED"
+        run.failure_reason = "Collection failed before evidence could be evaluated."
+        run.completed_at = datetime.now(UTC)
+        await session.commit()
+        raise CollectionError(run.failure_reason) from error
 
     for finding in result.findings:
         object_ids, counts = evidence_summary(finding.raw_evidence, settings)
