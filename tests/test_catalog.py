@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from nis2check_catalog import CatalogValidationError, load_catalog, load_control
+from nis2check_catalog.loader import _schema_path
 
 
 def test_loads_c01_catalogue() -> None:
@@ -9,6 +10,7 @@ def test_loads_c01_catalogue() -> None:
 
     assert [control.id for control in controls] == [f"C{number:02d}" for number in range(1, 16)]
     assert controls[0].queries["policies"].paged is True
+    assert _schema_path().is_file()
 
 
 def test_high_privilege_app_control_uses_application_compatible_read_scope() -> None:

@@ -43,6 +43,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["packages/collector", "packages/catalog", "apps/cli", "apps/api"]
 
+[tool.setuptools.package-data]
+nis2check_catalog = ["schema.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

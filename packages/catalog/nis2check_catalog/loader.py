@@ -15,7 +15,7 @@ class CatalogValidationError(ValueError):
 
 
 def _schema_path() -> Path:
-    return Path(__file__).parent.parent / "schema.json"
+    return Path(__file__).with_name("schema.json")
 
 
 def load_control(path: Path, schema_path: Path | None = None) -> ControlDefinition:
