@@ -4,7 +4,9 @@ domain: incident_response
 title: Directory audit logs are available
 requires: {scopes: [AuditLog.Read.All], licence: none}
 queries:
-  logs: {endpoint: "/v1.0/auditLogs/directoryAudits?$top=1", paged: true}
+  # This control only verifies that the audit endpoint is readable. Following
+  # @odata.nextLink here would enumerate the tenant's entire audit history.
+  logs: {endpoint: "/v1.0/auditLogs/directoryAudits?$top=1", paged: false}
 handler: directory_audit_logs
 params: {}
 remediation: https://learn.microsoft.com/purview/audit-solutions-overview

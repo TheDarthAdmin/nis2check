@@ -10,6 +10,7 @@ def test_loads_c01_catalogue() -> None:
 
     assert [control.id for control in controls] == [f"C{number:02d}" for number in range(1, 16)]
     assert controls[0].queries["policies"].paged is True
+    assert controls[11].queries["logs"].paged is False
     assert _schema_path().is_file()
 
 
