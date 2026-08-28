@@ -4,6 +4,11 @@ export type TenantStatus = {
   tenantId: string;
   consentGranted: boolean;
   consentedAt: string | null;
+  /** Graph permissions the current catalogue needs, what this tenant approved, and the gap. */
+  requiredScopes: string[];
+  consentedScopes: string[];
+  missingScopes: string[];
+  consentCurrent: boolean;
 };
 
 export type HostedRun = {

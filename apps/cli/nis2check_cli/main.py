@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from nis2check_catalog import load_catalog
+from nis2check_catalog import load_catalog, required_scopes
 from nis2check_collector.auth import MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
@@ -83,8 +83,7 @@ def run(
         raise typer.BadParameter("Certificate authentication needs --certificate and --thumbprint.")
     auth = MsalAuthenticator(tenant_id, client_id, output.with_suffix(".msal-cache.json"))
     if device_code:
-        scopes = sorted({scope for item in load_catalog(CATALOGUE) for scope in item.requires.scopes})
-        token = auth.acquire_device_code_token(scopes)
+        token = auth.acquire_device_code_token(required_scopes(load_catalog(CATALOGUE)))
     else:
         assert certificate is not None and thumbprint is not None
         token = auth.acquire_certificate_token(certificate.read_text(encoding="utf-8"), thumbprint)

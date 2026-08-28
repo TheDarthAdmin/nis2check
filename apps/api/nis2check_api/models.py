@@ -33,6 +33,9 @@ class Tenant(Base):
     entra_tenant_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     evidence_retention_enabled: Mapped[bool] = mapped_column(default=False)
     consent_granted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    #: The Graph permissions the administrator approved. A catalogue that needs more than
+    #: these has to be approved again before those controls can read anything.
+    consented_scopes: Mapped[list[str]] = mapped_column(JSONB, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

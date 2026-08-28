@@ -1,9 +1,10 @@
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from nis2check_api.database import SCHEMA_PATCHES
-from nis2check_api.models import FindingRecord
+from nis2check_api.models import FindingRecord, Tenant
 from nis2check_api.onboarding import admin_consent_url
-from nis2check_api.service import evidence_summary, finding_view
+from nis2check_api.service import catalogue_scopes, evidence_summary, finding_view, tenant_view
 from nis2check_api.settings import Settings
 
 
@@ -117,3 +118,53 @@ def test_columns_added_after_the_first_release_are_patched_in() -> None:
 
     assert "findings" in patched and "remediation_steps" in patched
     assert "tenants" in patched and "consent_granted_at" in patched
+
+
+def test_a_tenant_that_consented_to_every_required_scope_is_current() -> None:
+    tenant = Tenant(
+        entra_tenant_id="00000000-0000-0000-0000-000000000001",
+        consent_granted_at=datetime(2026, 1, 1, tzinfo=UTC),
+        consented_scopes=catalogue_scopes(),
+    )
+
+    view = tenant_view(tenant, tenant.entra_tenant_id)
+
+    assert view["consentGranted"] is True
+    assert view["missingScopes"] == []
+    assert view["consentCurrent"] is True
+
+
+def test_a_tenant_that_consented_before_a_control_was_added_has_to_approve_again() -> None:
+    tenant = Tenant(
+        entra_tenant_id="00000000-0000-0000-0000-000000000002",
+        consent_granted_at=datetime(2026, 1, 1, tzinfo=UTC),
+        consented_scopes=["Policy.Read.All"],
+    )
+
+    view = tenant_view(tenant, tenant.entra_tenant_id)
+
+    assert view["consentGranted"] is True
+    assert view["consentCurrent"] is False
+    assert "DelegatedAdminRelationship.Read.All" in view["missingScopes"]  # type: ignore[operator]
+    assert "Policy.Read.All" not in view["missingScopes"]  # type: ignore[operator]
+
+
+def test_a_tenant_that_consented_before_scopes_were_tracked_has_to_approve_again() -> None:
+    """Every tenant onboarded before this column existed reads as an empty consent."""
+    tenant = Tenant(
+        entra_tenant_id="00000000-0000-0000-0000-000000000003",
+        consent_granted_at=datetime(2026, 1, 1, tzinfo=UTC),
+        consented_scopes=None,
+    )
+
+    view = tenant_view(tenant, tenant.entra_tenant_id)
+
+    assert view["consentCurrent"] is False
+    assert view["missingScopes"] == catalogue_scopes()
+
+
+def test_an_unknown_tenant_needs_every_scope() -> None:
+    view = tenant_view(None, "00000000-0000-0000-0000-000000000004")
+
+    assert view["consentGranted"] is False
+    assert view["missingScopes"] == catalogue_scopes()

@@ -16,6 +16,8 @@ SCHEMA_PATCHES = (
     "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS consent_granted_at TIMESTAMP WITH TIME ZONE",
     # Findings stored before the catalogue carried remediation steps keep an empty list.
     "ALTER TABLE findings ADD COLUMN IF NOT EXISTS remediation_steps JSONB NOT NULL DEFAULT '[]'::jsonb",
+    # Tenants that consented before scopes were tracked start empty, so they are asked again.
+    "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS consented_scopes JSONB NOT NULL DEFAULT '[]'::jsonb",
 )
 
 

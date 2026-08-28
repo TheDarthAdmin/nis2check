@@ -1,0 +1,18 @@
+id: C28
+nis2: "21(2)(a)"
+domain: risk_management
+title: A risk-based Conditional Access policy acts on detected risk
+requires: {scopes: [Policy.Read.All], licence: entra_p2}
+queries:
+  policies: {endpoint: /v1.0/identity/conditionalAccess/policies, paged: true}
+handler: risk_based_conditional_access
+params: {}
+remediation: https://learn.microsoft.com/entra/id-protection/howto-identity-protection-configure-risk-policies
+remediation_steps:
+  - "Entra admin center > Protection > Conditional Access > Policies > New policy."
+  - "Add a user-risk policy: user risk High, grant access but require a secure password change."
+  - "Add a sign-in-risk policy: sign-in risk Medium and above, grant access but require multifactor authentication."
+  - "Run both in report-only first, check what they would have blocked, then enable them."
+limits: >
+  Detects that an enabled policy has a risk condition with a grant control. It cannot tell how
+  often the policy fired, and risk signals need Entra ID P2.

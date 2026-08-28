@@ -1,0 +1,18 @@
+id: C24
+nis2: "21(2)(i)"
+domain: access_management
+title: Guests receive the restricted directory role
+requires: {scopes: [Policy.Read.All], licence: none}
+queries:
+  authorization: {endpoint: /v1.0/policies/authorizationPolicy, paged: false}
+handler: guest_directory_access
+params: {}
+remediation: https://learn.microsoft.com/entra/external-id/external-collaboration-settings-configure
+remediation_steps:
+  - "Entra admin center > Identity > External Identities > External collaboration settings."
+  - "Set Guest user access to 'Guest user access is restricted to properties and memberships of their own directory objects'."
+  - "Check the applications that read directory data for guests before you tighten it; a few line-of-business apps rely on the wider access."
+  - "Re-check which guests still need an account at all; the strictest setting is no guest."
+limits: >
+  Reads the tenant-wide guest role. It does not evaluate what a guest can reach inside
+  SharePoint, Teams or an individual application.

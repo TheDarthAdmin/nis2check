@@ -1,6 +1,7 @@
 """Loading and validating YAML control definitions."""
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
 
 import yaml
@@ -41,3 +42,12 @@ def load_control(path: Path, schema_path: Path | None = None) -> ControlDefiniti
 def load_catalog(directory: Path) -> list[ControlDefinition]:
     """Load controls in deterministic ID order."""
     return [load_control(path) for path in sorted(directory.glob("C*.yaml"))]
+
+
+def required_scopes(controls: Iterable[ControlDefinition]) -> list[str]:
+    """The read-only Graph permissions these controls need, as a stable sorted set.
+
+    This is what an administrator consents to. Comparing it with what a tenant consented to
+    earlier is how the hosted workspace knows a tenant has to approve again.
+    """
+    return sorted({scope for control in controls for scope in control.requires.scopes})

@@ -13,7 +13,7 @@ ARTICLE_MEASURES = {f"21(2)({letter})" for letter in "abcdefghij"}
 def test_loads_the_catalogue() -> None:
     controls = load_catalog(CONTROLS)
 
-    assert [control.id for control in controls] == [f"C{number:02d}" for number in range(1, 23)]
+    assert [control.id for control in controls] == [f"C{number:02d}" for number in range(1, 29)]
     assert controls[0].queries["policies"].paged is True
     assert controls[11].queries["logs"].paged is False
     assert _schema_path().is_file()

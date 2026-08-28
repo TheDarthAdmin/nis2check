@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from nis2check_catalog import load_catalog
+from nis2check_catalog import load_catalog, required_scopes
 from nis2check_collector.auth import AuthenticationError, MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
@@ -57,18 +57,32 @@ async def record_admin_consent(session: AsyncSession, entra_tenant_id: str) -> T
         tenant = Tenant(organization_id=organization.id, entra_tenant_id=entra_tenant_id.lower())
         session.add(tenant)
     tenant.consent_granted_at = datetime.now(UTC)
+    tenant.consented_scopes = catalogue_scopes()
     await session.commit()
     await session.refresh(tenant)
     return tenant
 
 
+def catalogue_scopes() -> list[str]:
+    """The Graph permissions the current catalogue needs."""
+    return required_scopes(load_catalog(CATALOGUE))
+
+
 def tenant_view(tenant: Tenant | None, entra_tenant_id: str) -> dict[str, object]:
+    required = catalogue_scopes()
+    consented = list(tenant.consented_scopes or []) if tenant else []
+    granted = bool(tenant and tenant.consent_granted_at)
+    missing = [scope for scope in required if scope not in consented] if granted else required
     return {
         "tenantId": entra_tenant_id.lower(),
-        "consentGranted": bool(tenant and tenant.consent_granted_at),
+        "consentGranted": granted,
         "consentedAt": tenant.consent_granted_at.isoformat()
         if tenant and tenant.consent_granted_at
         else None,
+        "requiredScopes": required,
+        "consentedScopes": consented,
+        "missingScopes": missing,
+        "consentCurrent": granted and not missing,
     }
 
 

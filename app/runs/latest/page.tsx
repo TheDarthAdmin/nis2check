@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { ConsentRenewal } from "@/components/consent-renewal";
 import { ServiceUnavailable } from "@/components/service-unavailable";
 import { RunDetail } from "@/components/run-detail";
 import { TenantOnboarding } from "@/components/tenant-onboarding";
@@ -16,7 +17,7 @@ export default async function LatestRun({ searchParams }: { searchParams: Promis
     const runs = await getRuns(session.tenantId);
     const [latest] = runs;
     const findings = latest ? await getFindings(session.tenantId, latest.id) : [];
-    return <AppShell><RunDetail run={latest || null} findings={findings} runs={runs} /></AppShell>;
+    return <AppShell>{tenant.missingScopes.length > 0 ? <ConsentRenewal missing={tenant.missingScopes} /> : null}<RunDetail run={latest || null} findings={findings} runs={runs} /></AppShell>;
   } catch (error) {
     return <AppShell><ServiceUnavailable error={error} /></AppShell>;
   }

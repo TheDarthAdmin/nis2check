@@ -1,0 +1,18 @@
+id: C23
+nis2: "21(2)(i)"
+domain: access_management
+title: Default user permissions are restricted
+requires: {scopes: [Policy.Read.All], licence: none}
+queries:
+  authorization: {endpoint: /v1.0/policies/authorizationPolicy, paged: false}
+handler: default_user_permissions
+params: {}
+remediation: https://learn.microsoft.com/entra/fundamentals/users-default-permissions
+remediation_steps:
+  - "Entra admin center > Identity > Users > User settings."
+  - "Set 'Users can register applications' to No; app registrations then go through an administrator who can see what they ask for."
+  - "Set 'Restrict non-admin users from creating tenants' to Yes, so nobody spins up an unmanaged tenant with your identities."
+  - "Decide deliberately whether members may create security groups, and write down who does it instead."
+limits: >
+  Reads the tenant default user role. Individual users can still hold a directory role that
+  grants these rights, and this control does not enumerate those.

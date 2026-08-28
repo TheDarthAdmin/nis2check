@@ -1,0 +1,22 @@
+id: C25
+nis2: "21(2)(d)"
+domain: supply_chain
+title: Applications with high-privilege Graph permissions are identified
+requires: {scopes: [Application.Read.All], licence: none}
+queries:
+  graph_app: {endpoint: "/v1.0/servicePrincipals(appId='00000003-0000-0000-c000-000000000000')?$select=id,appRoles", paged: false}
+  assignments: {endpoint: "/v1.0/servicePrincipals(appId='00000003-0000-0000-c000-000000000000')/appRoleAssignedTo?$select=appRoleId,principalId,principalType,principalDisplayName", paged: true}
+handler: application_graph_permissions
+params:
+  escalation: [RoleManagement.ReadWrite.Directory, AppRoleAssignment.ReadWrite.All, Application.ReadWrite.All]
+  high: [Directory.ReadWrite.All, User.ReadWrite.All, Mail.ReadWrite, Mail.Send, Files.ReadWrite.All, Sites.FullControl.All]
+remediation: https://learn.microsoft.com/entra/identity/enterprise-apps/manage-application-permissions
+remediation_steps:
+  - "Entra admin center > Identity > Applications > Enterprise applications > the application > Permissions."
+  - "For every application in the evidence, ask what it actually does and revoke the permissions it does not need for that."
+  - "Replace tenant-wide write permissions with a scoped alternative where one exists, for example application access policies for mailboxes or Sites.Selected for SharePoint."
+  - "Record the owner and a review date for every application that keeps a write permission."
+limits: >
+  Reads application permissions granted on Microsoft Graph only. Permissions on other
+  resource applications, and delegated consent, are outside this control - C14 covers the
+  delegated side.

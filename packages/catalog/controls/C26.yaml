@@ -1,0 +1,18 @@
+id: C26
+nis2: "21(2)(d)"
+domain: supply_chain
+title: Partner delegated administrative access is limited and time-bound
+requires: {scopes: [DelegatedAdminRelationship.Read.All], licence: none}
+queries:
+  relationships: {endpoint: "/v1.0/tenantRelationships/delegatedAdminRelationships?$select=id,displayName,status,duration,autoExtendDuration,endDateTime,accessDetails&$top=300", paged: true}
+handler: delegated_admin_relationships
+params: {global_administrator_role: 62e90394-69f5-4237-9190-012177145e10}
+remediation: https://learn.microsoft.com/partner-center/gdap-obtain-admin-permissions-to-manage-customer
+remediation_steps:
+  - "Microsoft 365 admin center > Settings > Partner relationships, and open each partner with delegated administration."
+  - "End the relationships you no longer use; a former supplier keeps its access until somebody removes it."
+  - "Ask the partners you keep to request the least privileged roles they need, not Global Administrator."
+  - "Turn off auto-extend so the relationship comes back for a decision, and diary the end date."
+limits: >
+  Reads the delegated admin relationships this tenant granted. It cannot see what the partner
+  did with that access, nor access granted through a guest account instead of a relationship.

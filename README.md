@@ -7,7 +7,7 @@ doet uitsluitend GET-verzoeken naar Microsoft Graph en verandert nooit tenantcon
 
 ## Controls
 
-22 controls, samen goed voor elk van de tien maatregelen van NIS2 artikel 21(2). Elke control
+28 controls, samen goed voor elk van de tien maatregelen van NIS2 artikel 21(2). Elke control
 draagt naast de bevinding ook `remediation_steps`: de stappen waarmee de tenantbeheerder het
 zelf oplost. De collector voert die stappen nooit uit — hij leest alleen.
 
@@ -35,6 +35,26 @@ zelf oplost. De collector voert die stappen nooit uit — hij leest alleen.
 | C20 | 21(2)(h) | Zwakke authenticatiemethodes uit | Policy.Read.All | Methodes kunnen op groepen gescopet zijn. |
 | C21 | 21(2)(h) | Legacy-auth uit voor SharePoint | SharePointTenantSettings.Read.All | Alleen de tenantinstelling. |
 | C22 | 21(2)(i) | Externe deling beperkt | SharePointTenantSettings.Read.All | Alleen het tenantniveau, geen site-uitzonderingen. |
+| C23 | 21(2)(i) | Standaardrechten van gebruikers beperkt | Policy.Read.All | Alleen de default user role, geen individuele roltoekenningen. |
+| C24 | 21(2)(i) | Gasten krijgen de restricted rol | Policy.Read.All | Alleen de directoryrol, niet wat een gast in SharePoint of Teams ziet. |
+| C25 | 21(2)(d) | Apps met hoge Graph-applicatierechten | Application.Read.All | Alleen Graph-rechten; delegated consent zit in C14. |
+| C26 | 21(2)(d) | Delegated admin access van partners | DelegatedAdminRelationship.Read.All | Toont de relatie, niet wat de partner ermee deed. |
+| C27 | 21(2)(f) | Activatie van Global Administrator | RoleManagement.Read.Directory | Alleen het beleid van die ene rol; vereist PIM (P2). |
+| C28 | 21(2)(a) | Risicogebaseerd Conditional Access | Policy.Read.All | Bestaan van het beleid, niet hoe vaak het vuurde. |
+
+## Toestemming en permissies
+
+De vereiste Graph-permissies volgen uit de catalogus (`required_scopes`). Komt er een control
+bij die een nieuwe permissie nodig heeft, dan moet een tenantbeheerder opnieuw goedkeuren:
+
+1. Voeg de permissie toe aan de app-registratie in Entra (application permission, read-only).
+2. De hosted workspace vergelijkt per tenant de goedgekeurde scopes met wat de catalogus
+   vraagt en toont een banner met precies de ontbrekende permissies.
+3. Tot die goedkeuring rapporteren de betrokken controls `INCONCLUSIVE` — nooit een aanname.
+
+Tenants die goedkeurden vóór deze vergelijking bestond, hebben een lege lijst en krijgen de
+banner dus sowieso te zien. De CLI vraagt bij device-code-authenticatie elke run de actuele
+scopes op en heeft geen herregistratie nodig.
 
 ## CLI en container
 
