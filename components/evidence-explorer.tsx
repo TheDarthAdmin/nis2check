@@ -58,7 +58,7 @@ export function EvidenceExplorer({ runId, findings }: { runId: string; findings:
           <section className="domain-block" key={group.domain}>
             <div className="section-head">
               <h2>{domainLabel(group.domain)}</h2>
-              <span className="muted">{shown.length === group.findings.length ? `${group.findings.length} controls` : `${shown.length} of ${group.findings.length} controls`}</span>
+              <span className="muted">{shown.length === group.findings.length ? `${group.findings.length} ${group.findings.length === 1 ? "control" : "controls"}` : `${shown.length} of ${group.findings.length} controls`}</span>
             </div>
             <table className="table">
               <thead><tr><th scope="col">Control</th><th scope="col">Verdict</th><th scope="col">What the evidence shows</th></tr></thead>
