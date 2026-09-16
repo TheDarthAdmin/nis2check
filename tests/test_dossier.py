@@ -1,4 +1,7 @@
-"""The downloadable dossier must stay self-contained, complete and free of a total score."""
+"""The downloadable dossier must stay self-contained, complete and free of a total score.
+
+The HTML and the PDF are rendered by different engines, so the tests check that both exist and
+that the helpers deciding their content are shared."""
 
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -12,6 +15,7 @@ from nis2check_reporting import (
     measure_coverage,
     open_limits,
     render_dossier_html,
+    render_dossier_pdf,
 )
 from nis2check_scoping import Classification, OrganisationProfile, classify
 
@@ -192,35 +196,54 @@ def test_the_cover_states_whatever_the_classification_turned_out_to_be(
     assert classification.replace("_", " ") in html
 
 
-def test_the_pdf_writer_explains_itself_when_its_libraries_are_missing() -> None:
-    """The CLI must keep working without WeasyPrint, and say what is missing when asked for a PDF."""
-    from nis2check_reporting import dossier
-
-    source = Path(dossier.__file__).read_text(encoding="utf-8")
-
-    assert "libpango-1.0-0" in source, "the error has to name the package that is missing"
-    assert source.index("def write_pdf") < source.index("from weasyprint import HTML"), (
-        "WeasyPrint must be imported inside write_pdf, so `run` and `report` work without it"
-    )
-
-
-def test_the_pdf_actually_renders_when_weasyprint_is_usable(tmp_path: Path) -> None:
-    # importorskip only catches ImportError; a missing Pango surfaces as OSError from cffi.
-    try:
-        import weasyprint  # noqa: F401
-    except (ImportError, OSError) as error:
-        pytest.skip(f"WeasyPrint cannot load its system libraries: {error}")
-    from nis2check_reporting import write_pdf
-
+def test_the_pdf_renders_with_no_system_libraries_at_all() -> None:
+    """ReportLab is pure Python, so this has to work on any runtime that runs the API."""
     profile = essential_profile()
-    html = render_dossier_html(
+
+    data = render_dossier_pdf(
         run_result(finding("C01", Verdict.FAIL), finding("C02")),
-        TEMPLATES,
         scoping=classify(profile),
         profile=profile,
     )
-    output = tmp_path / "dossier.pdf"
 
-    write_pdf(html, output)
+    assert data.startswith(b"%PDF-")
+    assert len(data) > 2000
 
-    assert output.read_bytes().startswith(b"%PDF-")
+
+def test_the_pdf_renders_without_a_scoping_profile() -> None:
+    data = render_dossier_pdf(run_result(finding("C01")))
+
+    assert data.startswith(b"%PDF-")
+
+
+def test_the_pdf_survives_a_run_where_every_verdict_appears() -> None:
+    findings = [
+        finding(f"C{index:02d}", verdict, nis2=f"21(2)({letter})")
+        for index, (verdict, letter) in enumerate(
+            [
+                (Verdict.PASS, "a"),
+                (Verdict.FAIL, "b"),
+                (Verdict.PARTIAL, "c"),
+                (Verdict.INCONCLUSIVE, "d"),
+                (Verdict.NOT_APPLICABLE, "e"),
+            ],
+            start=1,
+        )
+    ]
+
+    assert render_dossier_pdf(run_result(*findings)).startswith(b"%PDF-")
+
+
+def test_markup_in_a_rationale_cannot_reach_the_pdf_as_markup() -> None:
+    """ReportLab paragraphs take mini-HTML, so tenant strings have to be escaped first."""
+    from nis2check_reporting.pdf import _escape
+
+    assert _escape("<b>x</b> & y") == "&lt;b&gt;x&lt;/b&gt; &amp; y"
+
+
+def test_a_finding_carrying_angle_brackets_still_renders() -> None:
+    hostile = finding("C01").model_copy(
+        update={"rationale": "A policy named <script>alert(1)</script> & friends was read."}
+    )
+
+    assert render_dossier_pdf(run_result(hostile)).startswith(b"%PDF-")

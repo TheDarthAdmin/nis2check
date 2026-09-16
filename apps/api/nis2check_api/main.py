@@ -16,7 +16,6 @@ from .service import (
     CollectionError,
     ConsentRequiredError,
     DossierUnavailableError,
-    PdfEngineUnavailableError,
     ProfileError,
     RunNotFoundError,
     build_dossier,
@@ -139,10 +138,10 @@ async def read_dossier(
     tenant: Annotated[Tenant, Depends(tenant_context)],
     format: str = "pdf",
 ) -> Response:
-    """The downloadable evidence dossier for a completed run.
+    """The downloadable evidence dossier for a completed run, as PDF or HTML.
 
-    HTML always works. PDF needs WeasyPrint's system libraries, so a deployment without them
-    gets a 503 that names what is missing rather than a broken download.
+    The PDF is drawn with ReportLab, which is pure Python, so both formats work on every
+    runtime this service can run on.
     """
     if format not in {"pdf", "html"}:
         raise HTTPException(status_code=400, detail="Choose format=pdf or format=html.")
@@ -152,10 +151,6 @@ async def read_dossier(
         )
     except RunNotFoundError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
-    except PdfEngineUnavailableError as error:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)
-        ) from error
     except DossierUnavailableError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     return Response(

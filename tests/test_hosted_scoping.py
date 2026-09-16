@@ -174,3 +174,20 @@ def test_every_offered_sector_key_is_one_the_scoping_package_accepts(sector_key:
     record = profile_record(sector_key=sector_key)
 
     classify(_organisation_profile(record))
+
+
+def test_the_hosted_pdf_renders_from_stored_findings() -> None:
+    """The hosted path builds the same document the CLI does, from database rows."""
+    from nis2check_reporting import render_dossier_pdf
+
+    result = RunResult(
+        tenant_id="00000000-0000-0000-0000-00000000fixt",
+        started_at=datetime(2026, 1, 2, tzinfo=UTC),
+        tool_version="0.1.0",
+        findings=[_finding_from_record(finding_record())],
+    )
+    profile = _organisation_profile(profile_record())
+
+    data = render_dossier_pdf(result, scoping=classify(profile), profile=profile)
+
+    assert data.startswith(b"%PDF-")

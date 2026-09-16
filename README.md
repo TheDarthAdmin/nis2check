@@ -78,7 +78,6 @@ niet erin.
 ## Het dossier als PDF
 
 ```powershell
-pip install "nis2check[pdf]"
 nis2check report nis2check.json --pdf dossier.pdf --profile profiel.json
 nis2check run --tenant-id <id> --client-id <id> --device-code --pdf dossier.pdf --profile profiel.json
 ```
@@ -101,18 +100,13 @@ Dezelfde twee dingen, achter de Entra-login:
 - **Dossier** — elke afgeronde run heeft een downloadknop. `GET /v1/runs/{id}/dossier?format=pdf`
   levert de PDF, `format=html` hetzelfde document als HTML.
 
-Let op bij Vercel: WeasyPrint heeft systeembibliotheken nodig die daar niet beschikbaar zijn.
-De PDF-route antwoordt dan `503` met de ontbrekende pakketten erin, en de interface biedt
-automatisch het HTML-dossier aan, dat een browser naar dezelfde pagina's afdrukt. Draait de API
-in een container of op een VM, installeer dan de pakketten hierboven en werkt de PDF wel.
+Beide formaten werken op elke runtime waar de API draait, Vercel inbegrepen.
 
-PDF-uitvoer vereist WeasyPrint met zijn systeembibliotheken. Op Debian of Ubuntu:
-
-```bash
-sudo apt-get install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfontconfig1
-```
-
-Ontbreken die, dan blijven `run` en `report` gewoon werken en zegt `--pdf` precies wat er mist.
+De PDF wordt getekend met ReportLab, niet geconverteerd uit HTML. Dat is pure Python: geen
+systeembibliotheken, geen extra installatiestap, werkt overal waar de rest werkt — ook
+serverless. De prijs is dat PDF en HTML twee aparte lay-outs zijn. Ze delen wél de helpers die
+bepalen *wat* er in staat (`measure_coverage`, `open_limits`, `endpoint_index`), zodat ze uit
+elkaar kunnen groeien in vorm maar niet in inhoud.
 
 ## Toestemming en permissies
 

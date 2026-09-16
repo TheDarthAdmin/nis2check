@@ -6,7 +6,7 @@ export const maxDuration = 120;
 
 /**
  * Streams the evidence dossier straight through, so the file never lands in this process.
- * `format=html` always works; `format=pdf` needs WeasyPrint's system libraries on the API.
+ * `format=pdf` is drawn with ReportLab and `format=html` comes from the Jinja template.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();

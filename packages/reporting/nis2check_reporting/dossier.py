@@ -1,8 +1,12 @@
-"""The downloadable evidence dossier: one PDF an auditor can be handed.
+"""The evidence dossier: one document an auditor can be handed.
 
 The HTML report is for reading on screen and filtering. The dossier is the same evidence laid
 out to be printed, paginated and archived, with the scope classification in front of it and the
 queried endpoints behind it. Nothing here interprets more than the report does.
+
+This module holds the HTML rendering and the helpers that decide what goes in. `pdf.py` draws
+the same content with ReportLab, and takes those helpers from here so the two cannot disagree
+about what the dossier contains.
 """
 
 from collections.abc import Sequence
@@ -34,9 +38,6 @@ CLASSIFICATION_HINT: dict[Classification, str] = {
     Classification.UNDETERMINED: "Scope could not be settled on the figures that were declared.",
 }
 
-
-class PdfUnavailableError(RuntimeError):
-    """WeasyPrint is installed but its system libraries are not."""
 
 
 def measure_coverage(
@@ -115,23 +116,3 @@ def render_dossier_html(
         follow_up_verdicts=FOLLOW_UP,
     )
 
-
-def write_pdf(html: str, output: Path, *, base_url: Path | None = None) -> None:
-    """Write the dossier HTML to a PDF.
-
-    WeasyPrint is imported here rather than at module import, so that `nis2check run` and the
-    HTML report keep working on a machine where its Pango libraries are missing.
-    """
-    try:
-        from weasyprint import HTML  # noqa: PLC0415 - optional at runtime by design
-    except ImportError as error:  # pragma: no cover - depends on the install
-        raise PdfUnavailableError(
-            "PDF output needs WeasyPrint: pip install 'nis2check[pdf]'."
-        ) from error
-    except OSError as error:
-        raise PdfUnavailableError(
-            "WeasyPrint is installed but could not load its system libraries. "
-            "On Debian or Ubuntu: apt-get install libpango-1.0-0 libpangoft2-1.0-0 "
-            f"libharfbuzz0b libfontconfig1. The original error was: {error}"
-        ) from error
-    HTML(string=html, base_url=str(base_url or output.parent)).write_pdf(str(output))

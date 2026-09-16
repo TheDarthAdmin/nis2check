@@ -17,8 +17,9 @@ Het verzamelt technisch bewijs voor NIS2 artikel 21 via Microsoft Graph. Het lev
 5. **Ruwe data en interpretatie gescheiden.** `raw_evidence` bevat wat Graph zei, `rationale` wat wij ervan maken. Nooit door elkaar.
 6. **Controls zijn data.** Metadata in YAML, evaluatie in een geregistreerde Python-handler.
 7. **Geen klantdata, nergens.** Niet in de repo, niet in tests, niet in logs. Testdata is altijd fixture-data. De hosted database slaat geen UPN's of e-mailadressen op, en ook geen bedrijfsnaam of ondernemingsnummer: `tenant_profiles` bevat sector en cijfers, meer niet.
-8. **De CLI werkt zonder de rest.** `pip install nis2check && nis2check run` volstaat: geen database, geen account, geen verbinding met ons. Dat geldt ook voor optionele extra's: ontbreekt WeasyPrint, dan werkt alles behalve `--pdf`, en dat zegt dan waarom.
-9. **Scoping is geen bewijs.** `packages/scoping` werkt op wat de organisatie zelf verklaart en wordt nooit een `Finding`. Het beantwoordt of de richtlijn van toepassing is; de controls beantwoorden wat de tenant kan tonen. Die twee door elkaar halen is hetzelfde soort fout als regel 5.
+8. **De CLI werkt zonder de rest.** `pip install nis2check && nis2check run` volstaat: geen database, geen account, geen verbinding met ons. Ook geen systeembibliotheken: de PDF wordt getekend met ReportLab, niet geconverteerd uit HTML.
+9. **HTML en PDF mogen verschillen in vorm, nooit in inhoud.** Twee renderers, één bron voor wat erin staat: `measure_coverage`, `open_limits`, `endpoint_index`, `follow_up`, `group_by_domain`, `verdict_tally`. Een sectie toevoegen doe je in beide.
+10. **Scoping is geen bewijs.** `packages/scoping` werkt op wat de organisatie zelf verklaart en wordt nooit een `Finding`. Het beantwoordt of de richtlijn van toepassing is; de controls beantwoorden wat de tenant kan tonen. Die twee door elkaar halen is hetzelfde soort fout als regel 5.
 
 ## Structuur
 
@@ -26,7 +27,7 @@ Het verzamelt technisch bewijs voor NIS2 artikel 21 via Microsoft Graph. Het lev
 packages/collector/   auth, graph-client, engine, handlers, rapportage
 packages/catalog/     controls/*.yaml + schema.json + artikel 21(2)-maatregelen
 packages/scoping/     sectors.yaml + classificatie essentieel/belangrijk/buiten scope
-packages/reporting/   HTML-rapport en PDF-dossier, gedeeld door CLI en API
+packages/reporting/   HTML-rapport (Jinja) en PDF-dossier (ReportLab), gedeeld door CLI en API
 apps/cli/             Typer-CLI, HTML/JSON/PDF-uitvoer, Dockerfile
 apps/api/             FastAPI, SQLAlchemy, Alembic, arq
 apps/web/             Next.js

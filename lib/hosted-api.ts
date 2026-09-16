@@ -96,7 +96,7 @@ export async function saveTenantProfile(tenantId: string, declared: Partial<Scop
 
 /**
  * The dossier is a file, not JSON, so this returns the raw response for the route to stream on.
- * A deployment without WeasyPrint's system libraries answers 503 for pdf and still serves html.
+ * Both formats are rendered server-side and work on every runtime the API runs on.
  */
 export async function fetchDossier(tenantId: string, runId: string, format: "pdf" | "html"): Promise<Response> {
   const { baseUrl, apiKey } = getHostedApiConfig();

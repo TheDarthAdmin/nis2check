@@ -12,14 +12,7 @@ from nis2check_collector.auth import MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
 from nis2check_collector.models import RunResult, Verdict
-from nis2check_reporting import (
-    PdfUnavailableError,
-    follow_up,
-    render_dossier_html,
-    render_html,
-    verdict_tally,
-    write_pdf,
-)
+from nis2check_reporting import follow_up, render_dossier_pdf, render_html, verdict_tally
 from nis2check_scoping import (
     NOT_LISTED,
     Classification,
@@ -89,13 +82,9 @@ def load_profile(path: Path | None) -> OrganisationProfile | None:
 def write_dossier(
     result: RunResult, output: Path, profile: OrganisationProfile | None
 ) -> None:
-    """Render and write the PDF dossier, explaining plainly when the renderer is missing."""
+    """Render and write the PDF dossier."""
     scoping = classify(profile) if profile is not None else None
-    html = render_dossier_html(result, scoping=scoping, profile=profile)
-    try:
-        write_pdf(html, output)
-    except PdfUnavailableError as error:
-        raise typer.BadParameter(str(error)) from error
+    output.write_bytes(render_dossier_pdf(result, scoping=scoping, profile=profile))
     typer.echo(f"Dossier written to {output}")
 
 

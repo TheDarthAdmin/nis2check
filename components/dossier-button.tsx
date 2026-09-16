@@ -4,17 +4,11 @@ import { useState } from "react";
 
 type Format = "pdf" | "html";
 
-type Failure = { detail: string; pdfUnsupported: boolean };
-
-async function download(runId: string, format: Format): Promise<Failure | null> {
+async function download(runId: string, format: Format): Promise<string | null> {
   const response = await fetch(`/api/runs/${runId}/dossier?format=${format}`);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { detail?: unknown } | null;
-    return {
-      detail: typeof payload?.detail === "string" ? payload.detail : `The dossier could not be built (${response.status}).`,
-      // 503 on the PDF route means this deployment has no renderer, not that the run is bad.
-      pdfUnsupported: response.status === 503,
-    };
+    return typeof payload?.detail === "string" ? payload.detail : `The dossier could not be built (${response.status}).`;
   }
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
@@ -28,25 +22,16 @@ async function download(runId: string, format: Format): Promise<Failure | null> 
   return null;
 }
 
-/**
- * The whole run as one document an auditor can be handed. PDF needs WeasyPrint's system
- * libraries on the collection service; where they are missing the HTML dossier is offered
- * instead, which a browser prints to the same pages.
- */
+/** The whole run as one document an auditor can be handed, as a PDF or as the same pages in HTML. */
 export function DossierButton({ runId }: { runId: string }) {
   const [busy, setBusy] = useState<Format | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pdfUnavailable, setPdfUnavailable] = useState(false);
 
   async function run(format: Format) {
     setBusy(format);
     setError(null);
     try {
-      const failure = await download(runId, format);
-      if (failure) {
-        setError(failure.detail);
-        if (format === "pdf" && failure.pdfUnsupported) setPdfUnavailable(true);
-      }
+      setError(await download(runId, format));
     } catch {
       setError("The dossier could not be downloaded. Check your connection and try again.");
     } finally {
@@ -55,10 +40,10 @@ export function DossierButton({ runId }: { runId: string }) {
   }
 
   return <div className="dossier-action">
-    <button className="secondary-button" type="button" disabled={busy !== null} aria-busy={busy !== null} onClick={() => run(pdfUnavailable ? "html" : "pdf")}>
-      {busy ? "Building the dossier…" : pdfUnavailable ? "Download dossier (HTML)" : "Download dossier (PDF)"}
+    <button className="secondary-button" type="button" disabled={busy !== null} aria-busy={busy !== null} onClick={() => run("pdf")}>
+      {busy ? "Building the dossier…" : "Download dossier (PDF)"}
     </button>
-    {!pdfUnavailable ? <button className="link-button" type="button" disabled={busy !== null} onClick={() => run("html")}>or HTML</button> : null}
+    <button className="link-button" type="button" disabled={busy !== null} onClick={() => run("html")}>or HTML</button>
     {error ? <p className="error-text" role="alert">{error}</p> : null}
   </div>;
 }

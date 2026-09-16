@@ -14,6 +14,7 @@ dependencies = [
   "jsonschema>=4.23,<5",
   "msal>=1.30,<2",
   "pydantic>=2.8,<3",
+  "reportlab>=4.2,<5",
   "PyYAML>=6.0,<7",
   "typer>=0.12,<1",
 ]
@@ -22,9 +23,6 @@ dependencies = [
 nis2check = "nis2check_cli.main:app"
 
 [project.optional-dependencies]
-pdf = [
-  "weasyprint>=62,<67",
-]
 hosted = [
   "alembic>=1.13,<2",
   "arq>=0.26,<1",
@@ -41,7 +39,6 @@ dev = [
   "ruff>=0.6,<1",
   "types-jsonschema>=4.23,<5",
   "types-PyYAML>=6.0,<7",
-  "weasyprint>=62,<67",
 ]
 
 [tool.setuptools.packages.find]
@@ -79,5 +76,5 @@ entrypoint = "apps.api.nis2check_api.main:app"
 build = "python -m pip install '.[hosted]'"
 
 [[tool.mypy.overrides]]
-module = ["msal", "weasyprint"]
+module = ["msal", "reportlab.*"]
 ignore_missing_imports = true

@@ -3,19 +3,21 @@
 Pure presentation. It takes findings and a scoping result and returns a document. It knows
 nothing about Graph, databases or HTTP, which is why the CLI and the hosted API can both use
 it without either depending on the other.
+
+The PDF is drawn with ReportLab rather than converted from the HTML, so it needs no system
+libraries and works on any runtime that can run Python.
 """
 
 from pathlib import Path
 
 from .dossier import (
     CLASSIFICATION_HINT,
-    PdfUnavailableError,
     endpoint_index,
     measure_coverage,
     open_limits,
     render_dossier_html,
-    write_pdf,
 )
+from .pdf import render_dossier_pdf
 from .report import (
     FOLLOW_UP,
     VERDICT_HINT,
@@ -38,7 +40,6 @@ __all__ = [
     "FOLLOW_UP",
     "VERDICT_HINT",
     "VERDICT_ORDER",
-    "PdfUnavailableError",
     "domain_label",
     "endpoint_index",
     "follow_up",
@@ -46,8 +47,8 @@ __all__ = [
     "measure_coverage",
     "open_limits",
     "render_dossier_html",
+    "render_dossier_pdf",
     "render_html",
     "template_directory",
     "verdict_tally",
-    "write_pdf",
 ]

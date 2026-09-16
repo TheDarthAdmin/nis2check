@@ -3,12 +3,10 @@
 import asyncio
 import hashlib
 import hmac
-import logging
 from collections.abc import Iterable
 from datetime import UTC, datetime, time, timedelta
 from importlib.metadata import version
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any
 from uuid import UUID
 
@@ -17,7 +15,7 @@ from nis2check_collector.auth import AuthenticationError, MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
 from nis2check_collector.models import Finding, RunResult, Verdict
-from nis2check_reporting import PdfUnavailableError, render_dossier_html, write_pdf
+from nis2check_reporting import render_dossier_html, render_dossier_pdf
 from nis2check_scoping import (
     NOT_LISTED,
     Classification,
@@ -33,8 +31,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import FindingRecord, Organization, Run, Tenant, TenantProfile
 from .settings import Settings
-
-logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[3]
 CATALOGUE = ROOT / "packages" / "catalog" / "controls"
@@ -63,14 +59,6 @@ class DossierUnavailableError(RuntimeError):
 
 class RunNotFoundError(DossierUnavailableError):
     """No run with this id belongs to this tenant."""
-
-
-class PdfEngineUnavailableError(DossierUnavailableError):
-    """This deployment cannot render PDF, but the HTML dossier is the same document.
-
-    The cause is an install detail of the service, so the reader is told what to do instead
-    and the technical reason goes to the log rather than to a tenant administrator's screen.
-    """
 
 
 async def get_tenant(session: AsyncSession, entra_tenant_id: str) -> Tenant | None:
@@ -524,25 +512,13 @@ async def build_dossier(
     )
     record = await get_profile(session, tenant)
     profile = _organisation_profile(record) if record else None
-    html = render_dossier_html(
-        result,
-        scoping=classify(profile) if profile else None,
-        profile=profile,
-    )
+    scoping = classify(profile) if profile else None
     stem = f"nis2check-dossier-{run.created_at:%Y%m%d}" if run.created_at else "nis2check-dossier"
     if not want_pdf:
+        html = render_dossier_html(result, scoping=scoping, profile=profile)
         return html.encode("utf-8"), "text/html; charset=utf-8", f"{stem}.html"
-    with TemporaryDirectory() as directory:
-        output = Path(directory) / "dossier.pdf"
-        try:
-            write_pdf(html, output)
-        except PdfUnavailableError as error:
-            logger.warning("PDF rendering is unavailable on this deployment: %s", error)
-            raise PdfEngineUnavailableError(
-                "This deployment cannot produce PDF files. The HTML dossier is the same "
-                "document and your browser can print it to PDF."
-            ) from error
-        return output.read_bytes(), "application/pdf", f"{stem}.pdf"
+    pdf = render_dossier_pdf(result, scoping=scoping, profile=profile)
+    return pdf, "application/pdf", f"{stem}.pdf"
 
 
 def _finding_from_record(record: FindingRecord) -> Finding:
