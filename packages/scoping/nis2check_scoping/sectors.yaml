@@ -1,0 +1,94 @@
+# Sectors of directive (EU) 2022/2555, annexes I and II.
+#
+# `scope_rule` is article 2: by_size means the medium-sized ceilings of article 2(1) decide,
+# regardless_of_size means article 2(2)(a) puts the entity in scope at any size.
+# `essential_rule` is article 3: when_large is 3(1)(a), always is 3(1)(b), when_medium_or_larger
+# is 3(1)(c), never means annex II, which article 3(2) leaves important.
+
+sectors:
+  # -- Annex I, point 1: Energy ------------------------------------------------------------
+  - {key: energy.electricity_supply, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Electricity supply undertaking"}
+  - {key: energy.electricity_dso, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Electricity distribution system operator"}
+  - {key: energy.electricity_tso, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Electricity transmission system operator"}
+  - {key: energy.electricity_producer, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Electricity producer"}
+  - {key: energy.electricity_nemo, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Nominated electricity market operator"}
+  - {key: energy.electricity_market_participant, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Electricity market participant"}
+  - {key: energy.recharging_point_operator, annex: "I", annex_point: "I.1(a)", sector: Energy, subsector: "Recharging point operator"}
+  - {key: energy.district_heating_cooling, annex: "I", annex_point: "I.1(b)", sector: Energy, subsector: "District heating and cooling operator"}
+  - {key: energy.oil_pipeline, annex: "I", annex_point: "I.1(c)", sector: Energy, subsector: "Oil pipeline operator"}
+  - {key: energy.oil_production_refining, annex: "I", annex_point: "I.1(c)", sector: Energy, subsector: "Oil production, refining, treatment or storage"}
+  - {key: energy.oil_central_stockholding, annex: "I", annex_point: "I.1(c)", sector: Energy, subsector: "Central stockholding entity for oil"}
+  - {key: energy.gas_supply, annex: "I", annex_point: "I.1(d)", sector: Energy, subsector: "Natural gas supply undertaking"}
+  - {key: energy.gas_dso, annex: "I", annex_point: "I.1(d)", sector: Energy, subsector: "Natural gas distribution system operator"}
+  - {key: energy.gas_tso, annex: "I", annex_point: "I.1(d)", sector: Energy, subsector: "Natural gas transmission system operator"}
+  - {key: energy.gas_storage, annex: "I", annex_point: "I.1(d)", sector: Energy, subsector: "Natural gas storage system operator"}
+  - {key: energy.gas_lng, annex: "I", annex_point: "I.1(d)", sector: Energy, subsector: "LNG system operator"}
+  - {key: energy.gas_refining, annex: "I", annex_point: "I.1(d)", sector: Energy, subsector: "Natural gas refining or treatment facility"}
+  - {key: energy.hydrogen, annex: "I", annex_point: "I.1(e)", sector: Energy, subsector: "Hydrogen production, storage or transmission"}
+
+  # -- Annex I, point 2: Transport ---------------------------------------------------------
+  - {key: transport.air_carrier, annex: "I", annex_point: "I.2(a)", sector: Transport, subsector: "Air carrier"}
+  - {key: transport.airport_managing_body, annex: "I", annex_point: "I.2(a)", sector: Transport, subsector: "Airport managing body"}
+  - {key: transport.air_traffic_management, annex: "I", annex_point: "I.2(a)", sector: Transport, subsector: "Air traffic management service provider"}
+  - {key: transport.rail_infrastructure_manager, annex: "I", annex_point: "I.2(b)", sector: Transport, subsector: "Railway infrastructure manager"}
+  - {key: transport.railway_undertaking, annex: "I", annex_point: "I.2(b)", sector: Transport, subsector: "Railway undertaking"}
+  - {key: transport.water_passenger_freight, annex: "I", annex_point: "I.2(c)", sector: Transport, subsector: "Inland, sea and coastal passenger or freight transport"}
+  - {key: transport.port_managing_body, annex: "I", annex_point: "I.2(c)", sector: Transport, subsector: "Port managing body"}
+  - {key: transport.vessel_traffic_services, annex: "I", annex_point: "I.2(c)", sector: Transport, subsector: "Vessel traffic services operator"}
+  - {key: transport.road_authority, annex: "I", annex_point: "I.2(d)", sector: Transport, subsector: "Road authority"}
+  - {key: transport.intelligent_transport_systems, annex: "I", annex_point: "I.2(d)", sector: Transport, subsector: "Operator of intelligent transport systems"}
+
+  # -- Annex I, points 3 and 4: Banking and financial market infrastructure -----------------
+  - {key: banking.credit_institution, annex: "I", annex_point: "I.3", sector: Banking, subsector: "Credit institution"}
+  - {key: financial.trading_venue, annex: "I", annex_point: "I.4", sector: Financial market infrastructure, subsector: "Operator of a trading venue"}
+  - {key: financial.central_counterparty, annex: "I", annex_point: "I.4", sector: Financial market infrastructure, subsector: "Central counterparty"}
+
+  # -- Annex I, point 5: Health ------------------------------------------------------------
+  - {key: health.provider, annex: "I", annex_point: "I.5", sector: Health, subsector: "Healthcare provider"}
+  - {key: health.eu_reference_laboratory, annex: "I", annex_point: "I.5", sector: Health, subsector: "EU reference laboratory"}
+  - {key: health.medicinal_research, annex: "I", annex_point: "I.5", sector: Health, subsector: "Research and development of medicinal products"}
+  - {key: health.pharmaceutical_manufacture, annex: "I", annex_point: "I.5", sector: Health, subsector: "Manufacture of basic pharmaceutical products and preparations"}
+  - {key: health.critical_medical_devices, annex: "I", annex_point: "I.5", sector: Health, subsector: "Manufacture of medical devices critical during a public health emergency"}
+
+  # -- Annex I, points 6 and 7: Water ------------------------------------------------------
+  - {key: water.drinking_supplier, annex: "I", annex_point: "I.6", sector: Drinking water, subsector: "Supplier or distributor of water for human consumption"}
+  - {key: water.waste_water, annex: "I", annex_point: "I.7", sector: Waste water, subsector: "Collection, disposal or treatment of urban, domestic or industrial waste water"}
+
+  # -- Annex I, point 8: Digital infrastructure --------------------------------------------
+  - {key: digital_infrastructure.internet_exchange_point, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Internet exchange point provider"}
+  - {key: digital_infrastructure.dns_service_provider, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "DNS service provider (root name servers excluded)", scope_rule: regardless_of_size, essential_rule: always}
+  - {key: digital_infrastructure.tld_name_registry, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Top-level domain name registry", scope_rule: regardless_of_size, essential_rule: always}
+  - {key: digital_infrastructure.cloud_computing, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Cloud computing service provider"}
+  - {key: digital_infrastructure.data_centre, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Data centre service provider"}
+  - {key: digital_infrastructure.content_delivery_network, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Content delivery network provider"}
+  - {key: digital_infrastructure.trust_service_qualified, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Qualified trust service provider", scope_rule: regardless_of_size, essential_rule: always}
+  - {key: digital_infrastructure.trust_service_non_qualified, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Non-qualified trust service provider", scope_rule: regardless_of_size}
+  - {key: digital_infrastructure.public_ecomms_network, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Provider of public electronic communications networks", scope_rule: regardless_of_size, essential_rule: when_medium_or_larger}
+  - {key: digital_infrastructure.public_ecomms_service, annex: "I", annex_point: "I.8", sector: Digital infrastructure, subsector: "Provider of publicly available electronic communications services", scope_rule: regardless_of_size, essential_rule: when_medium_or_larger}
+
+  # -- Annex I, points 9, 10 and 11: ICT management, public administration, space -----------
+  - {key: ict_management.managed_service_provider, annex: "I", annex_point: "I.9", sector: ICT service management, subsector: "Managed service provider"}
+  - {key: ict_management.managed_security_service_provider, annex: "I", annex_point: "I.9", sector: ICT service management, subsector: "Managed security service provider"}
+  - {key: public_administration.central_government, annex: "I", annex_point: "I.10(a)", sector: Public administration, subsector: "Central government entity", scope_rule: regardless_of_size, essential_rule: always}
+  - {key: public_administration.regional, annex: "I", annex_point: "I.10(b)", sector: Public administration, subsector: "Regional public administration entity", scope_rule: regardless_of_size, essential_rule: never}
+  - {key: space.ground_infrastructure, annex: "I", annex_point: "I.11", sector: Space, subsector: "Operator of ground-based space infrastructure"}
+
+  # -- Annex II ----------------------------------------------------------------------------
+  - {key: postal.postal_courier, annex: "II", annex_point: "II.1", sector: Postal and courier services, subsector: "Postal or courier service provider", essential_rule: never}
+  - {key: waste.management, annex: "II", annex_point: "II.2", sector: Waste management, subsector: "Waste management undertaking", essential_rule: never}
+  - {key: chemicals.manufacture, annex: "II", annex_point: "II.3", sector: Chemicals, subsector: "Manufacture of chemical substances", essential_rule: never}
+  - {key: chemicals.production, annex: "II", annex_point: "II.3", sector: Chemicals, subsector: "Production of chemical products", essential_rule: never}
+  - {key: chemicals.distribution, annex: "II", annex_point: "II.3", sector: Chemicals, subsector: "Distribution of chemical substances", essential_rule: never}
+  - {key: food.production, annex: "II", annex_point: "II.4", sector: Food, subsector: "Food production", essential_rule: never}
+  - {key: food.processing, annex: "II", annex_point: "II.4", sector: Food, subsector: "Food processing", essential_rule: never}
+  - {key: food.distribution, annex: "II", annex_point: "II.4", sector: Food, subsector: "Food distribution", essential_rule: never}
+  - {key: manufacturing.medical_devices, annex: "II", annex_point: "II.5(a)", sector: Manufacturing, subsector: "Medical devices and in vitro diagnostic medical devices", essential_rule: never}
+  - {key: manufacturing.computer_electronic_optical, annex: "II", annex_point: "II.5(b)", sector: Manufacturing, subsector: "Computer, electronic and optical products", essential_rule: never}
+  - {key: manufacturing.electrical_equipment, annex: "II", annex_point: "II.5(c)", sector: Manufacturing, subsector: "Electrical equipment", essential_rule: never}
+  - {key: manufacturing.machinery, annex: "II", annex_point: "II.5(d)", sector: Manufacturing, subsector: "Machinery and equipment not elsewhere classified", essential_rule: never}
+  - {key: manufacturing.motor_vehicles, annex: "II", annex_point: "II.5(e)", sector: Manufacturing, subsector: "Motor vehicles, trailers and semi-trailers", essential_rule: never}
+  - {key: manufacturing.other_transport_equipment, annex: "II", annex_point: "II.5(f)", sector: Manufacturing, subsector: "Other transport equipment", essential_rule: never}
+  - {key: digital_provider.online_marketplace, annex: "II", annex_point: "II.6", sector: Digital providers, subsector: "Online marketplace", essential_rule: never}
+  - {key: digital_provider.online_search_engine, annex: "II", annex_point: "II.6", sector: Digital providers, subsector: "Online search engine", essential_rule: never}
+  - {key: digital_provider.social_networking, annex: "II", annex_point: "II.6", sector: Digital providers, subsector: "Social networking services platform", essential_rule: never}
+  - {key: research.organisation, annex: "II", annex_point: "II.7", sector: Research, subsector: "Research organisation", essential_rule: never}

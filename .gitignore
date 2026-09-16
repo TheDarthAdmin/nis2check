@@ -19,3 +19,6 @@ node_modules/
 
 .vercel
 .neon
+
+# Local virtualenv
+.venv/
