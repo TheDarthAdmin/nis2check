@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, time, timedelta
 from importlib.metadata import version
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 from uuid import UUID
 
@@ -14,12 +15,22 @@ from nis2check_catalog import load_catalog, required_scopes
 from nis2check_collector.auth import AuthenticationError, MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
-from nis2check_collector.models import Finding, RunResult
+from nis2check_collector.models import Finding, RunResult, Verdict
+from nis2check_reporting import PdfUnavailableError, render_dossier_html, write_pdf
+from nis2check_scoping import (
+    NOT_LISTED,
+    Classification,
+    OrganisationProfile,
+    ScopingResult,
+    classify,
+    load_sectors,
+)
+from pydantic import ValidationError
 from sqlalchemy import Select, desc, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import FindingRecord, Organization, Run, Tenant
+from .models import FindingRecord, Organization, Run, Tenant, TenantProfile
 from .settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -37,6 +48,14 @@ class CollectionError(RuntimeError):
 
 class ConsentRequiredError(RuntimeError):
     """The tenant administrator has not granted Graph application consent."""
+
+
+class ProfileError(ValueError):
+    """The declared scoping profile is not something the scoping package accepts."""
+
+
+class DossierUnavailableError(RuntimeError):
+    """The dossier cannot be produced for this run, or not in the requested format."""
 
 
 async def get_tenant(session: AsyncSession, entra_tenant_id: str) -> Tenant | None:
@@ -327,3 +346,197 @@ def _change(previous: dict[str, object] | None, current: dict[str, object] | Non
     if previous["verdict"] == current["verdict"]:
         return "UNCHANGED"
     return "CHANGED"
+
+
+# --- Scoping -----------------------------------------------------------------------------
+#
+# A profile is what the tenant declared about itself, not what was read from Graph. It is
+# kept apart from findings for the same reason the packages are: a verdict is traceable to a
+# Graph response, a classification never is.
+
+
+async def get_profile(session: AsyncSession, tenant: Tenant) -> TenantProfile | None:
+    result: TenantProfile | None = await session.scalar(
+        select(TenantProfile).where(TenantProfile.tenant_id == tenant.id)
+    )
+    return result
+
+
+def _organisation_profile(record: TenantProfile) -> OrganisationProfile:
+    """The stored row as the scoping package's own model.
+
+    Name and registration number stay None: the hosted database does not hold them, so a
+    hosted dossier is headed by the tenant id rather than by a company name.
+    """
+    return OrganisationProfile(
+        sector_key=record.sector_key,
+        employees=record.employees,
+        annual_turnover_eur=record.annual_turnover_eur,
+        balance_sheet_total_eur=record.balance_sheet_total_eur,
+        sole_provider=record.sole_provider,
+        critical_entity_cer=record.critical_entity_cer,
+        designated_as=Classification(record.designated_as) if record.designated_as else None,
+    )
+
+
+async def save_profile(
+    session: AsyncSession, tenant: Tenant, declared: dict[str, Any]
+) -> dict[str, object]:
+    """Store a declared profile after the scoping package has accepted it."""
+    try:
+        profile = OrganisationProfile.model_validate(
+            {**declared, "name": None, "registration_number": None}
+        )
+        classify(profile)
+    except ValidationError as error:
+        raise ProfileError(f"The declared profile is not valid: {error.error_count()} problem(s).") from error
+    except LookupError as error:
+        raise ProfileError(str(error)) from error
+
+    record = await get_profile(session, tenant)
+    if record is None:
+        record = TenantProfile(tenant_id=tenant.id, sector_key=profile.sector_key)
+        session.add(record)
+    record.sector_key = profile.sector_key
+    record.employees = profile.employees
+    record.annual_turnover_eur = profile.annual_turnover_eur
+    record.balance_sheet_total_eur = profile.balance_sheet_total_eur
+    record.sole_provider = profile.sole_provider
+    record.critical_entity_cer = profile.critical_entity_cer
+    record.designated_as = profile.designated_as.value if profile.designated_as else None
+    await session.commit()
+    await session.refresh(record)
+    return profile_view(record)
+
+
+def profile_view(record: TenantProfile | None) -> dict[str, object]:
+    """The declared profile with the classification it produces, or an empty answer."""
+    if record is None:
+        return {"declared": None, "scoping": None}
+    profile = _organisation_profile(record)
+    outcome = classify(profile)
+    return {
+        "declared": {
+            "sectorKey": record.sector_key,
+            "employees": record.employees,
+            "annualTurnoverEur": float(record.annual_turnover_eur)
+            if record.annual_turnover_eur is not None
+            else None,
+            "balanceSheetTotalEur": float(record.balance_sheet_total_eur)
+            if record.balance_sheet_total_eur is not None
+            else None,
+            "soleProvider": record.sole_provider,
+            "criticalEntityCer": record.critical_entity_cer,
+            "designatedAs": record.designated_as,
+            "updatedAt": record.updated_at.isoformat() if record.updated_at else None,
+        },
+        "scoping": scoping_view(outcome),
+    }
+
+
+def scoping_view(outcome: ScopingResult) -> dict[str, object]:
+    return {
+        "classification": outcome.classification.value,
+        "size": outcome.size.value,
+        "inScope": outcome.in_scope,
+        "rationale": outcome.rationale,
+        "legalBasis": outcome.legal_basis,
+        "supervision": outcome.supervision,
+        "sector": {
+            "key": outcome.sector.key,
+            "annex": outcome.sector.annex.value,
+            "annexPoint": outcome.sector.annex_point,
+            "sector": outcome.sector.sector,
+            "subsector": outcome.sector.subsector,
+        }
+        if outcome.sector
+        else None,
+    }
+
+
+def sector_options() -> list[dict[str, str]]:
+    """Every selectable activity, annex order, plus the "none of these" option."""
+    options = [
+        {
+            "key": sector.key,
+            "annex": sector.annex.value,
+            "annexPoint": sector.annex_point,
+            "sector": sector.sector,
+            "subsector": sector.subsector,
+        }
+        for sector in load_sectors()
+    ]
+    options.append(
+        {
+            "key": NOT_LISTED,
+            "annex": "",
+            "annexPoint": "",
+            "sector": "None of these activities",
+            "subsector": "Not listed in annex I or annex II",
+        }
+    )
+    return options
+
+
+# --- Dossier -----------------------------------------------------------------------------
+
+
+async def build_dossier(
+    session: AsyncSession, tenant: Tenant, run_id: UUID, want_pdf: bool
+) -> tuple[bytes, str, str]:
+    """Render a stored run as the downloadable dossier.
+
+    Returns the body, its media type and a filename. The stored findings carry no raw Graph
+    payload, so `raw_evidence` stays empty here; the dossier never printed it anyway.
+    """
+    run = await get_run(session, tenant, run_id)
+    if run is None:
+        raise DossierUnavailableError("Run not found.")
+    if run.status != "COMPLETE":
+        raise DossierUnavailableError("A dossier can only be built from a completed collection.")
+    records = (
+        await session.scalars(
+            select(FindingRecord)
+            .where(FindingRecord.run_id == run.id, FindingRecord.tenant_id == tenant.id)
+            .order_by(FindingRecord.control_id)
+        )
+    ).all()
+    result = RunResult(
+        tenant_id=tenant.entra_tenant_id,
+        started_at=run.created_at,
+        tool_version=run.collector_version,
+        findings=[_finding_from_record(record) for record in records],
+    )
+    record = await get_profile(session, tenant)
+    profile = _organisation_profile(record) if record else None
+    html = render_dossier_html(
+        result,
+        scoping=classify(profile) if profile else None,
+        profile=profile,
+    )
+    stem = f"nis2check-dossier-{run.created_at:%Y%m%d}" if run.created_at else "nis2check-dossier"
+    if not want_pdf:
+        return html.encode("utf-8"), "text/html; charset=utf-8", f"{stem}.html"
+    with TemporaryDirectory() as directory:
+        output = Path(directory) / "dossier.pdf"
+        try:
+            write_pdf(html, output)
+        except PdfUnavailableError as error:
+            raise DossierUnavailableError(str(error)) from error
+        return output.read_bytes(), "application/pdf", f"{stem}.pdf"
+
+
+def _finding_from_record(record: FindingRecord) -> Finding:
+    return Finding(
+        control_id=record.control_id,
+        nis2=record.nis2,
+        domain=record.domain,
+        title=record.title,
+        verdict=Verdict(record.verdict),
+        rationale=record.rationale,
+        endpoints=list(record.endpoints or []),
+        remediation=record.remediation,
+        remediation_steps=list(record.remediation_steps or []),
+        limits=record.limits,
+        raw_evidence={},
+    )

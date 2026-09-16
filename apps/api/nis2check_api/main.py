@@ -6,7 +6,7 @@ from secrets import compare_digest
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import Database
@@ -15,15 +15,22 @@ from .service import (
     ActiveRunError,
     CollectionError,
     ConsentRequiredError,
+    DossierUnavailableError,
+    ProfileError,
+    build_dossier,
     compare_runs,
     create_run,
     create_scheduled_runs,
+    get_profile,
     get_run,
     get_tenant,
     list_findings,
     list_runs,
+    profile_view,
     record_admin_consent,
     run_view,
+    save_profile,
+    sector_options,
     tenant_view,
 )
 from .settings import Settings, get_settings
@@ -95,6 +102,67 @@ async def complete_admin_consent(
 ) -> dict[str, object]:
     tenant = await record_admin_consent(database_session, normalized_tenant_id(tenant_id))
     return tenant_view(tenant, tenant.entra_tenant_id)
+
+
+@app.get("/v1/sectors", dependencies=[Depends(authorize)])
+async def read_sectors() -> dict[str, object]:
+    """The annex I and annex II activities a tenant can declare. Catalogue data, not tenant data."""
+    return {"sectors": sector_options()}
+
+
+@app.get("/v1/tenants/{tenant_id}/profile", dependencies=[Depends(authorize)])
+async def read_profile(
+    database_session: Annotated[AsyncSession, Depends(session)],
+    tenant: Annotated[Tenant, Depends(tenant_context)],
+) -> dict[str, object]:
+    return profile_view(await get_profile(database_session, tenant))
+
+
+@app.put("/v1/tenants/{tenant_id}/profile", dependencies=[Depends(authorize)])
+async def write_profile(
+    database_session: Annotated[AsyncSession, Depends(session)],
+    tenant: Annotated[Tenant, Depends(tenant_context)],
+    declared: Annotated[dict[str, object], Body()],
+) -> dict[str, object]:
+    try:
+        return await save_profile(database_session, tenant, declared)
+    except ProfileError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+
+
+@app.get("/v1/runs/{run_id}/dossier", dependencies=[Depends(authorize)])
+async def read_dossier(
+    run_id: UUID,
+    database_session: Annotated[AsyncSession, Depends(session)],
+    tenant: Annotated[Tenant, Depends(tenant_context)],
+    format: str = "pdf",
+) -> Response:
+    """The downloadable evidence dossier for a completed run.
+
+    HTML always works. PDF needs WeasyPrint's system libraries, so a deployment without them
+    gets a 503 that names what is missing rather than a broken download.
+    """
+    if format not in {"pdf", "html"}:
+        raise HTTPException(status_code=400, detail="Choose format=pdf or format=html.")
+    try:
+        body, media_type, filename = await build_dossier(
+            database_session, tenant, run_id, want_pdf=format == "pdf"
+        )
+    except DossierUnavailableError as error:
+        message = str(error)
+        code = (
+            status.HTTP_404_NOT_FOUND
+            if message == "Run not found."
+            else status.HTTP_503_SERVICE_UNAVAILABLE
+            if "WeasyPrint" in message
+            else status.HTTP_409_CONFLICT
+        )
+        raise HTTPException(status_code=code, detail=message) from error
+    return Response(
+        content=body,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/v1/runs", dependencies=[Depends(authorize)])

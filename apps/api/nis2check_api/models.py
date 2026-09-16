@@ -5,9 +5,10 @@ stored separately with expiry so normal application queries never receive it by 
 """
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func, text
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -37,6 +38,32 @@ class Tenant(Base):
     #: these has to be approved again before those controls can read anything.
     consented_scopes: Mapped[list[str]] = mapped_column(JSONB, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TenantProfile(Base):
+    """What a tenant declared about itself, so scoping survives between sessions.
+
+    Deliberately without a company name or registration number. Those are what the scoping
+    package calls optional cover fields, and the hosted side keeps to the same rule as the
+    rest of this model: nothing that identifies the customer is stored here.
+    """
+
+    __tablename__ = "tenant_profiles"
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenants.id"), unique=True, nullable=False
+    )
+    sector_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    employees: Mapped[int | None] = mapped_column()
+    annual_turnover_eur: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    balance_sheet_total_eur: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    sole_provider: Mapped[bool] = mapped_column(default=False)
+    critical_entity_cer: Mapped[bool] = mapped_column(default=False)
+    designated_as: Mapped[str | None] = mapped_column(String(24))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class User(Base):
