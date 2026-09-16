@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import hmac
+import logging
 from collections.abc import Iterable
 from datetime import UTC, datetime, time, timedelta
 from importlib.metadata import version
@@ -33,6 +34,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .models import FindingRecord, Organization, Run, Tenant, TenantProfile
 from .settings import Settings
 
+logger = logging.getLogger(__name__)
+
 ROOT = Path(__file__).resolve().parents[3]
 CATALOGUE = ROOT / "packages" / "catalog" / "controls"
 RUN_RECOVERY_TIMEOUT = timedelta(minutes=10)
@@ -56,6 +59,18 @@ class ProfileError(ValueError):
 
 class DossierUnavailableError(RuntimeError):
     """The dossier cannot be produced for this run, or not in the requested format."""
+
+
+class RunNotFoundError(DossierUnavailableError):
+    """No run with this id belongs to this tenant."""
+
+
+class PdfEngineUnavailableError(DossierUnavailableError):
+    """This deployment cannot render PDF, but the HTML dossier is the same document.
+
+    The cause is an install detail of the service, so the reader is told what to do instead
+    and the technical reason goes to the log rather than to a tenant administrator's screen.
+    """
 
 
 async def get_tenant(session: AsyncSession, entra_tenant_id: str) -> Tenant | None:
@@ -491,7 +506,7 @@ async def build_dossier(
     """
     run = await get_run(session, tenant, run_id)
     if run is None:
-        raise DossierUnavailableError("Run not found.")
+        raise RunNotFoundError("Run not found.")
     if run.status != "COMPLETE":
         raise DossierUnavailableError("A dossier can only be built from a completed collection.")
     records = (
@@ -522,7 +537,11 @@ async def build_dossier(
         try:
             write_pdf(html, output)
         except PdfUnavailableError as error:
-            raise DossierUnavailableError(str(error)) from error
+            logger.warning("PDF rendering is unavailable on this deployment: %s", error)
+            raise PdfEngineUnavailableError(
+                "This deployment cannot produce PDF files. The HTML dossier is the same "
+                "document and your browser can print it to PDF."
+            ) from error
         return output.read_bytes(), "application/pdf", f"{stem}.pdf"
 
 

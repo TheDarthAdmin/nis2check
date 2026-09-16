@@ -4,11 +4,17 @@ import { useState } from "react";
 
 type Format = "pdf" | "html";
 
-async function download(runId: string, format: Format): Promise<string | null> {
+type Failure = { detail: string; pdfUnsupported: boolean };
+
+async function download(runId: string, format: Format): Promise<Failure | null> {
   const response = await fetch(`/api/runs/${runId}/dossier?format=${format}`);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { detail?: unknown } | null;
-    return typeof payload?.detail === "string" ? payload.detail : `The dossier could not be built (${response.status}).`;
+    return {
+      detail: typeof payload?.detail === "string" ? payload.detail : `The dossier could not be built (${response.status}).`,
+      // 503 on the PDF route means this deployment has no renderer, not that the run is bad.
+      pdfUnsupported: response.status === 503,
+    };
   }
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
@@ -38,8 +44,8 @@ export function DossierButton({ runId }: { runId: string }) {
     try {
       const failure = await download(runId, format);
       if (failure) {
-        setError(failure);
-        if (format === "pdf" && failure.includes("WeasyPrint")) setPdfUnavailable(true);
+        setError(failure.detail);
+        if (format === "pdf" && failure.pdfUnsupported) setPdfUnavailable(true);
       }
     } catch {
       setError("The dossier could not be downloaded. Check your connection and try again.");
@@ -53,6 +59,6 @@ export function DossierButton({ runId }: { runId: string }) {
       {busy ? "Building the dossier…" : pdfUnavailable ? "Download dossier (HTML)" : "Download dossier (PDF)"}
     </button>
     {!pdfUnavailable ? <button className="link-button" type="button" disabled={busy !== null} onClick={() => run("html")}>or HTML</button> : null}
-    {error ? <p className="error-text" role="alert">{error}{pdfUnavailable ? " The HTML dossier prints to the same pages from your browser." : ""}</p> : null}
+    {error ? <p className="error-text" role="alert">{error}</p> : null}
   </div>;
 }

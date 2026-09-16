@@ -16,7 +16,9 @@ from .service import (
     CollectionError,
     ConsentRequiredError,
     DossierUnavailableError,
+    PdfEngineUnavailableError,
     ProfileError,
+    RunNotFoundError,
     build_dossier,
     compare_runs,
     create_run,
@@ -148,16 +150,14 @@ async def read_dossier(
         body, media_type, filename = await build_dossier(
             database_session, tenant, run_id, want_pdf=format == "pdf"
         )
+    except RunNotFoundError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except PdfEngineUnavailableError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)
+        ) from error
     except DossierUnavailableError as error:
-        message = str(error)
-        code = (
-            status.HTTP_404_NOT_FOUND
-            if message == "Run not found."
-            else status.HTTP_503_SERVICE_UNAVAILABLE
-            if "WeasyPrint" in message
-            else status.HTTP_409_CONFLICT
-        )
-        raise HTTPException(status_code=code, detail=message) from error
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     return Response(
         content=body,
         media_type=media_type,
