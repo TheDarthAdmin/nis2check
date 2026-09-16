@@ -1,0 +1,22 @@
+id: C36
+nis2: "21(2)(c)"
+domain: continuity
+title: Retention policy protects data against deletion
+requires:
+  scopes: [RecordsManagement.Read.All]
+  licence: none
+queries:
+  labels: {endpoint: "/beta/security/labels/retentionLabels?$select=id,retentionDuration,behaviorDuringRetentionPeriod,isInUse&$top=200", paged: true}
+handler: retention_labels
+params:
+  minimum_days: 365
+remediation: https://learn.microsoft.com/purview/create-retention-labels-data-lifecycle-management
+remediation_steps:
+  - "Purview portal > Data lifecycle management > Retention labels > Create a label."
+  - "Set a retention period that matches the legal and operational requirement for that data."
+  - "Publish the label, or auto-apply it, so it lands on the sites and mailboxes it is meant for."
+  - "Check back that the label reports as in use; an unpublished label protects nothing."
+limits: >
+  Retention is not backup. This shows that deletion is governed for labelled content, not
+  that anything can be restored after a failure, and not that the labels cover the data that
+  matters. Uses a beta endpoint and requires a Purview licence.

@@ -1,0 +1,22 @@
+id: C30
+nis2: "21(2)(j)"
+domain: authentication
+title: Users have actually registered a multifactor method
+requires:
+  scopes: [AuditLog.Read.All]
+  licence: entra_p1
+queries:
+  registrations: {endpoint: "/v1.0/reports/authenticationMethods/userRegistrationDetails?$select=id,isMfaCapable,isAdmin&$top=999", paged: true}
+handler: mfa_registration_coverage
+params:
+  max_users: 5000
+remediation: https://learn.microsoft.com/entra/identity/authentication/howto-registration-mfa-sspr-combined
+remediation_steps:
+  - "Entra admin center > Protection > Authentication methods > Registration campaign."
+  - "Enable the nudge for the users who are capable but not registered, and set a grace period."
+  - "For the remaining users, use a Conditional Access policy that requires registration before access."
+  - "Re-run this control after the campaign; the number of capable users is the evidence, not the policy."
+limits: >
+  Counts registration, not use. A registered method says a user could pass MFA, not that
+  every sign-in demanded it. Requires the Entra P1 authentication methods report. No user
+  principal name or display name is read: only the object id and the capability flags.

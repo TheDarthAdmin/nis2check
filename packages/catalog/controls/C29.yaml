@@ -1,0 +1,21 @@
+id: C29
+nis2: "21(2)(i)"
+domain: identity_governance
+title: Leaver workflows revoke access when someone leaves
+requires:
+  scopes: [LifecycleWorkflows.Read.All]
+  licence: entra_p2
+queries:
+  workflows: {endpoint: "/v1.0/identityGovernance/lifecycleWorkflows/workflows?$select=id,category,isEnabled,isSchedulingEnabled&$top=100", paged: true}
+handler: leaver_workflows
+params:
+  category: leaver
+remediation: https://learn.microsoft.com/entra/id-governance/lifecycle-workflow-templates
+remediation_steps:
+  - "Entra admin center > Identity Governance > Lifecycle workflows > Create a workflow."
+  - "Pick the 'Real-time employee termination' or 'Post-offboarding of an employee' template."
+  - "Set the scope to the users the HR source marks as leavers, and keep the disable-account and revoke-sessions tasks."
+  - "Enable the workflow and turn scheduling on, so it runs without someone remembering to start it."
+limits: >
+  Shows that an automated offboarding workflow exists, is enabled and is scheduled. It cannot
+  show that the HR source feeding it is correct, nor that every leaver was actually caught.

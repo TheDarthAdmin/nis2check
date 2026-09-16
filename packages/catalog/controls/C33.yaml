@@ -1,0 +1,20 @@
+id: C33
+nis2: "21(2)(g)"
+domain: device
+title: Device compliance policies exist and are assigned
+requires:
+  scopes: [DeviceManagementConfiguration.Read.All]
+  licence: intune
+queries:
+  policies: {endpoint: "/v1.0/deviceManagement/deviceCompliancePolicies?$expand=assignments", paged: true}
+handler: device_compliance_policies
+params: {}
+remediation: https://learn.microsoft.com/mem/intune/protect/device-compliance-get-started
+remediation_steps:
+  - "Intune admin center > Devices > Compliance policies > Create policy, one per platform in use."
+  - "Require disk encryption, a minimum OS version and an active antimalware agent."
+  - "Assign the policy to a group that actually contains the devices; an unassigned policy evaluates nothing."
+  - "Add a Conditional Access policy that requires a compliant device, so the compliance verdict has an effect."
+limits: >
+  Shows that policies exist and are assigned, and what they demand. It does not read the
+  resulting compliance state per device; C09 covers encryption on the devices themselves.

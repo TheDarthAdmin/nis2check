@@ -1,0 +1,21 @@
+id: C32
+nis2: "21(2)(b)"
+domain: logging
+title: Security incidents are triaged and closed with a verdict
+requires:
+  scopes: [SecurityIncident.Read.All]
+  licence: none
+queries:
+  incidents: {endpoint: "/v1.0/security/incidents?$select=id,status,severity,classification,createdDateTime,lastUpdateDateTime&$top=200", paged: true}
+handler: security_incident_followup
+params:
+  stale_days: 30
+remediation: https://learn.microsoft.com/defender-xdr/manage-incidents
+remediation_steps:
+  - "Microsoft Defender portal > Incidents & alerts > Incidents, and filter on status Active."
+  - "Work the incidents that have not moved for weeks first; an untouched incident is an unanswered alert."
+  - "Close every resolved incident with a classification, so true and false positives can be told apart later."
+  - "Assign ownership so incidents cannot sit in the queue without someone responsible."
+limits: >
+  Requires Microsoft Defender XDR. An empty incident queue is reported as INCONCLUSIVE, not
+  as a pass: this tool cannot tell a quiet tenant from one where Defender was never deployed.

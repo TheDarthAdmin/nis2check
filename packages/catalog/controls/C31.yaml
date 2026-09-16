@@ -1,0 +1,21 @@
+id: C31
+nis2: "21(2)(h)"
+domain: authentication
+title: Domains authenticate in the tenant, not at an external identity provider
+requires:
+  scopes: [Domain.Read.All]
+  licence: none
+queries:
+  domains: {endpoint: "/v1.0/domains?$select=id,authenticationType,isVerified,isDefault&$top=200", paged: true}
+handler: federated_domains
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/hybrid/connect/migrate-from-federation-to-cloud-authentication
+remediation_steps:
+  - "Entra admin center > Identity > Domain names, and note every domain whose type is Federated."
+  - "For each one, decide whether the external identity provider still has to hold the authentication."
+  - "Where it does not, migrate the domain to managed authentication with password hash or pass-through sync."
+  - "Where it does, document the identity provider's own controls: the evidence in this report does not cover it."
+limits: >
+  Reports where authentication happens, not how strong it is. For a federated domain the
+  multifactor and Conditional Access evidence elsewhere in this report proves nothing,
+  because the external identity provider decides.

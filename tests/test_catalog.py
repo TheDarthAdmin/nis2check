@@ -13,7 +13,10 @@ ARTICLE_MEASURES = {f"21(2)({letter})" for letter in "abcdefghij"}
 def test_loads_the_catalogue() -> None:
     controls = load_catalog(CONTROLS)
 
-    assert [control.id for control in controls] == [f"C{number:02d}" for number in range(1, 29)]
+    assert [control.id for control in controls] == [
+        f"C{number:02d}" for number in range(1, len(controls) + 1)
+    ], "control ids must stay contiguous from C01"
+    assert len(controls) >= 36
     assert controls[0].queries["policies"].paged is True
     assert controls[11].queries["logs"].paged is False
     assert _schema_path().is_file()
@@ -23,6 +26,20 @@ def test_every_article_21_measure_has_a_control() -> None:
     covered = {control.nis2 for control in load_catalog(CONTROLS)}
 
     assert ARTICLE_MEASURES <= covered, f"no control covers {sorted(ARTICLE_MEASURES - covered)}"
+
+
+def test_every_control_has_a_registered_handler() -> None:
+    """A catalogue entry pointing at a handler that does not exist fails the whole control."""
+    from nis2check_collector.handlers import get_handler
+
+    for control in load_catalog(CONTROLS):
+        assert get_handler(control.handler) is not None, control.id
+
+
+def test_handlers_are_not_shared_between_controls() -> None:
+    handlers = [control.handler for control in load_catalog(CONTROLS)]
+
+    assert len(set(handlers)) == len(handlers)
 
 
 def test_every_control_explains_how_to_remediate() -> None:

@@ -1,0 +1,21 @@
+id: C35
+nis2: "21(2)(d)"
+domain: apps
+title: External organisations are admitted by name, not by default
+requires:
+  scopes: [Policy.Read.All]
+  licence: none
+queries:
+  default_policy: {endpoint: "/v1.0/policies/crossTenantAccessPolicy/default", paged: false}
+  partners: {endpoint: "/v1.0/policies/crossTenantAccessPolicy/partners", paged: true}
+handler: cross_tenant_access
+params: {}
+remediation: https://learn.microsoft.com/entra/external-id/cross-tenant-access-overview
+remediation_steps:
+  - "Entra admin center > Identity > External Identities > Cross-tenant access settings."
+  - "Under Default settings, block inbound B2B collaboration, so no unknown tenant is admitted silently."
+  - "Add an organisation entry for each supplier or partner that genuinely needs access, and scope it to the groups and applications it needs."
+  - "Only trust an external tenant's multifactor claim for organisations you configured by name."
+limits: >
+  Reads the tenant's own admission rules. It does not show which external users actually
+  hold access today, nor what a partner did with it; C26 covers delegated partner access.

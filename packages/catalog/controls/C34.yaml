@@ -1,0 +1,21 @@
+id: C34
+nis2: "21(2)(e)"
+domain: apps
+title: New applications go through an admin consent request
+requires:
+  scopes: [Policy.Read.All]
+  licence: none
+queries:
+  policy: {endpoint: "/v1.0/policies/adminConsentRequestPolicy", paged: false}
+handler: admin_consent_workflow
+params: {}
+remediation: https://learn.microsoft.com/entra/identity/enterprise-apps/configure-admin-consent-workflow
+remediation_steps:
+  - "Entra admin center > Identity > Applications > Enterprise applications > Consent and permissions > Admin consent settings."
+  - "Set 'Users can request admin consent to apps they are unable to consent to' to Yes."
+  - "Name the reviewers who receive the requests, and enable the notification to them."
+  - "Set a request expiry so a request cannot sit unanswered indefinitely."
+limits: >
+  Reads the request policy only. It cannot show how requests were decided, or whether an
+  application arrived in the tenant by another route. Read together with C15, which decides
+  what a user may consent to without asking at all.

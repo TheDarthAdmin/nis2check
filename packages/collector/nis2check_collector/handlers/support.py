@@ -52,3 +52,8 @@ def timestamp(value: object) -> datetime | None:
     except ValueError:
         return None
     return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def string_param(params: dict[str, object], key: str, default: str) -> str:
+    value = params.get(key, default)
+    return value if isinstance(value, str) else default
