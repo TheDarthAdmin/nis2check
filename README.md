@@ -7,7 +7,7 @@ doet uitsluitend GET-verzoeken naar Microsoft Graph en verandert nooit tenantcon
 
 ## Controls
 
-28 controls, samen goed voor elk van de tien maatregelen van NIS2 artikel 21(2). Elke control
+36 controls, samen goed voor elk van de tien maatregelen van NIS2 artikel 21(2). Elke control
 draagt naast de bevinding ook `remediation_steps`: de stappen waarmee de tenantbeheerder het
 zelf oplost. De collector voert die stappen nooit uit — hij leest alleen.
 
@@ -41,6 +41,62 @@ zelf oplost. De collector voert die stappen nooit uit — hij leest alleen.
 | C26 | 21(2)(d) | Delegated admin access van partners | DelegatedAdminRelationship.Read.All | Toont de relatie, niet wat de partner ermee deed. |
 | C27 | 21(2)(f) | Activatie van Global Administrator | RoleManagement.Read.Directory | Alleen het beleid van die ene rol; vereist PIM (P2). |
 | C28 | 21(2)(a) | Risicogebaseerd Conditional Access | Policy.Read.All | Bestaan van het beleid, niet hoe vaak het vuurde. |
+| C29 | 21(2)(i) | Leaver-workflows trekken toegang in | LifecycleWorkflows.Read.All | Toont het bestaan, niet of elke vertrekker bereikt werd. |
+| C30 | 21(2)(j) | Gebruikers hebben MFA echt geregistreerd | AuditLog.Read.All | Telt registratie, geen gebruik. Vereist Entra P1. |
+| C31 | 21(2)(h) | Domeinen authenticeren in de tenant zelf | Domain.Read.All | Bij federatie beslist een externe IdP; dit rapport reikt daar niet. |
+| C32 | 21(2)(b) | Incidenten worden opgevolgd en afgesloten | SecurityIncident.Read.All | Vereist Defender XDR. Lege wachtrij = INCONCLUSIVE, geen PASS. |
+| C33 | 21(2)(g) | Compliance-policies bestaan én zijn toegewezen | DeviceManagementConfiguration.Read.All | Leest de policy, niet de compliance-status per toestel. |
+| C34 | 21(2)(e) | Nieuwe apps lopen via admin consent request | Policy.Read.All | Alleen het aanvraagbeleid, niet hoe aanvragen beslist werden. |
+| C35 | 21(2)(d) | Externe organisaties worden bij naam toegelaten | Policy.Read.All | Alleen het toelatingsbeleid, niet wie vandaag toegang heeft. |
+| C36 | 21(2)(c) | Retentiebeleid beschermt data tegen verwijdering | RecordsManagement.Read.All | Retentie is geen back-up. Beta endpoint, Purview-licentie nodig. |
+
+## Valt u onder NIS2?
+
+Dat is een andere vraag dan wat de tenant kan aantonen, en het antwoord komt niet uit Graph.
+`packages/scoping` classificeert een organisatie als **essentieel**, **belangrijk** of **niet in
+scope** op basis van sector (bijlage I of II), personeelsbestand, omzet en balanstotaal.
+
+```powershell
+nis2check sectors
+nis2check scope --sector health.provider --employees 400 --turnover 90000000 --balance 60000000 --output profiel.json
+```
+
+Wat het strenger maakt dan een vragenlijst met twee vragen:
+
+- Het balanstotaal telt mee. Onder 250 werknemers alleen kan een onderneming nog steeds groot
+  zijn, want de KMO-aanbeveling vraagt dat omzet **en** balanstotaal beide de grens passeren.
+- Sectoren van artikel 2(2)(a) — DNS, TLD-registries, vertrouwensdiensten, openbare elektronische
+  communicatie — vallen in scope ongeacht hun omvang.
+- CER-aanduiding, positie als enige aanbieder en aanduiding door een overheid gaan voor op de
+  omvangsdrempel.
+- Ontbreken de cijfers, dan is het resultaat `UNDETERMINED` met vermelding van welk cijfer
+  ontbreekt. Dezelfde regel als `INCONCLUSIVE`: niet raden.
+
+Scoping is zelfgerapporteerd en wordt daarom nooit een `Finding`. Het staat naast de collector,
+niet erin.
+
+## Het dossier als PDF
+
+```powershell
+pip install "nis2check[pdf]"
+nis2check report nis2check.json --pdf dossier.pdf --profile profiel.json
+nis2check run --tenant-id <id> --client-id <id> --device-code --pdf dossier.pdf --profile profiel.json
+```
+
+Eén PDF die een auditor kan krijgen: omslag met classificatie, de dekking van artikel 21(2)
+maatregel per maatregel, elke bevinding met rationale, remediatiestappen en beperkingen, en twee
+bijlagen — wat het dossier *niet* bewijst (de `limits` van élke control, ook de geslaagde) en elk
+Graph-endpoint dat gelezen werd. Geen totaalscore, geen percentage.
+
+`--profile` is optioneel; zonder profiel vervalt het scopinghoofdstuk en blijft de rest gelijk.
+
+PDF-uitvoer vereist WeasyPrint met zijn systeembibliotheken. Op Debian of Ubuntu:
+
+```bash
+sudo apt-get install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfontconfig1
+```
+
+Ontbreken die, dan blijven `run` en `report` gewoon werken en zegt `--pdf` precies wat er mist.
 
 ## Toestemming en permissies
 
@@ -83,7 +139,7 @@ docker run --rm -it -v ${PWD}:/output nis2check run --tenant-id <tenant-id> --cl
 python -m pip install -e ".[dev]"
 pytest
 ruff check .
-mypy --strict packages/collector packages/catalog apps/cli
+mypy --strict packages/collector packages/catalog packages/scoping apps/cli
 ```
 
 De collector doet uitsluitend GET-verzoeken naar Microsoft Graph. Bij ontoegankelijke of
