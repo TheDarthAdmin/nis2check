@@ -53,11 +53,12 @@ def _ordered(findings: Sequence[Finding]) -> list[Finding]:
     return sorted(findings, key=lambda item: (VERDICT_ORDER.index(item.verdict), item.control_id))
 
 
-def render_html(result: RunResult, template_directory: Path) -> str:
+def render_html(result: RunResult, template_directory: Path | None = None) -> str:
     """Render an auditor-portable HTML report with no third-party resources."""
     # Autoescape unconditionally: the template is named `.html.j2`, which extension-based
     # selection does not recognise, and tenant strings reach the report through rationales.
-    environment = Environment(loader=FileSystemLoader(template_directory), autoescape=True)
+    directory = template_directory or Path(__file__).parent / "templates"
+    environment = Environment(loader=FileSystemLoader(directory), autoescape=True)
     environment.filters["domain_label"] = domain_label
     template = environment.get_template("report.html.j2")
     return template.render(

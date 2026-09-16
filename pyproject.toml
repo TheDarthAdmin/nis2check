@@ -45,16 +45,17 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["packages/collector", "packages/catalog", "packages/scoping", "apps/cli", "apps/api"]
+where = ["packages/collector", "packages/catalog", "packages/scoping", "packages/reporting", "apps/cli", "apps/api"]
 
 [tool.setuptools.package-data]
 nis2check_catalog = ["schema.json"]
 nis2check_scoping = ["sectors.yaml"]
+nis2check_reporting = ["templates/*.j2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-pythonpath = ["packages/collector", "packages/catalog", "packages/scoping", "apps/api", "apps/cli"]
+pythonpath = ["packages/collector", "packages/catalog", "packages/scoping", "packages/reporting", "apps/api", "apps/cli"]
 
 [tool.ruff]
 target-version = "py312"
@@ -67,8 +68,8 @@ ignore = ["E501"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["nis2check_collector", "nis2check_catalog", "nis2check_scoping", "nis2check_cli"]
-mypy_path = "packages/collector:packages/catalog:packages/scoping:apps/cli"
+packages = ["nis2check_collector", "nis2check_catalog", "nis2check_scoping", "nis2check_reporting", "nis2check_cli"]
+mypy_path = "packages/collector:packages/catalog:packages/scoping:packages/reporting:apps/cli"
 
 [tool.vercel]
 # Used only by the separate Vercel project whose Framework Preset is FastAPI.

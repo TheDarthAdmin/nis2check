@@ -6,16 +6,16 @@ from pathlib import Path
 
 import pytest
 from nis2check_catalog import ARTICLE_21_2
-from nis2check_cli.dossier import (
+from nis2check_collector.models import Finding, RunResult, Verdict
+from nis2check_reporting import (
     endpoint_index,
     measure_coverage,
     open_limits,
     render_dossier_html,
 )
-from nis2check_collector.models import Finding, RunResult, Verdict
 from nis2check_scoping import Classification, OrganisationProfile, classify
 
-TEMPLATES = Path(__file__).resolve().parents[1] / "apps" / "cli" / "templates"
+TEMPLATES = Path(__file__).resolve().parents[1] / "packages" / "reporting" / "nis2check_reporting" / "templates"
 
 
 def finding(
@@ -194,7 +194,7 @@ def test_the_cover_states_whatever_the_classification_turned_out_to_be(
 
 def test_the_pdf_writer_explains_itself_when_its_libraries_are_missing() -> None:
     """The CLI must keep working without WeasyPrint, and say what is missing when asked for a PDF."""
-    from nis2check_cli import dossier
+    from nis2check_reporting import dossier
 
     source = Path(dossier.__file__).read_text(encoding="utf-8")
 
@@ -210,7 +210,7 @@ def test_the_pdf_actually_renders_when_weasyprint_is_usable(tmp_path: Path) -> N
         import weasyprint  # noqa: F401
     except (ImportError, OSError) as error:
         pytest.skip(f"WeasyPrint cannot load its system libraries: {error}")
-    from nis2check_cli.dossier import write_pdf
+    from nis2check_reporting import write_pdf
 
     profile = essential_profile()
     html = render_dossier_html(

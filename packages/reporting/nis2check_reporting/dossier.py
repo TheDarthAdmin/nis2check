@@ -89,13 +89,14 @@ def open_limits(findings: Sequence[Finding]) -> list[Finding]:
 
 def render_dossier_html(
     result: RunResult,
-    template_directory: Path,
+    template_directory: Path | None = None,
     *,
     scoping: ScopingResult | None = None,
     profile: OrganisationProfile | None = None,
 ) -> str:
     """Render the dossier as a self-contained, printable HTML document."""
-    environment = Environment(loader=FileSystemLoader(template_directory), autoescape=True)
+    directory = template_directory or Path(__file__).parent / "templates"
+    environment = Environment(loader=FileSystemLoader(directory), autoescape=True)
     environment.filters["domain_label"] = domain_label
     return environment.get_template(TEMPLATE).render(
         run=result,

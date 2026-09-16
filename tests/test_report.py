@@ -4,10 +4,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from nis2check_cli.report import follow_up, group_by_domain, render_html, verdict_tally
 from nis2check_collector.models import Finding, RunResult, Verdict
+from nis2check_reporting import follow_up, group_by_domain, render_html, verdict_tally
 
-TEMPLATES = Path(__file__).resolve().parents[1] / "apps" / "cli" / "templates"
+TEMPLATES = Path(__file__).resolve().parents[1] / "packages" / "reporting" / "nis2check_reporting" / "templates"
 
 
 def finding(control_id: str, verdict: Verdict, domain: str = "authentication") -> Finding:

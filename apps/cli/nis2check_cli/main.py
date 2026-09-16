@@ -12,6 +12,14 @@ from nis2check_collector.auth import MsalAuthenticator
 from nis2check_collector.engine import CollectorEngine
 from nis2check_collector.graph import AsyncGraphClient
 from nis2check_collector.models import RunResult, Verdict
+from nis2check_reporting import (
+    PdfUnavailableError,
+    follow_up,
+    render_dossier_html,
+    render_html,
+    verdict_tally,
+    write_pdf,
+)
 from nis2check_scoping import (
     NOT_LISTED,
     Classification,
@@ -21,13 +29,9 @@ from nis2check_scoping import (
     sectors_by_annex,
 )
 
-from .dossier import PdfUnavailableError, render_dossier_html, write_pdf
-from .report import follow_up, render_html, verdict_tally
-
 app = typer.Typer(no_args_is_help=True, help="Read-only NIS2 evidence collection for Microsoft 365.")
 ROOT = Path(__file__).resolve().parents[3]
 CATALOGUE = ROOT / "packages" / "catalog" / "controls"
-TEMPLATES = ROOT / "apps" / "cli" / "templates"
 CLASSIFICATION_COLOUR: dict[Classification, str] = {
     Classification.ESSENTIAL: typer.colors.RED,
     Classification.IMPORTANT: typer.colors.YELLOW,
@@ -87,7 +91,7 @@ def write_dossier(
 ) -> None:
     """Render and write the PDF dossier, explaining plainly when the renderer is missing."""
     scoping = classify(profile) if profile is not None else None
-    html = render_dossier_html(result, TEMPLATES, scoping=scoping, profile=profile)
+    html = render_dossier_html(result, scoping=scoping, profile=profile)
     try:
         write_pdf(html, output)
     except PdfUnavailableError as error:
@@ -202,7 +206,7 @@ def run(
     output.write_text(result.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(f"Evidence written to {output}")
     if html is not None:
-        html.write_text(render_html(result, TEMPLATES), encoding="utf-8")
+        html.write_text(render_html(result), encoding="utf-8")
         typer.echo(f"Report written to {html}")
     if pdf is not None:
         write_dossier(result, pdf, load_profile(profile))
@@ -221,7 +225,7 @@ def report(
 ) -> None:
     """Render a self-contained HTML evidence report from a JSON run result."""
     result = RunResult.model_validate_json(source.read_text(encoding="utf-8"))
-    output.write_text(render_html(result, TEMPLATES), encoding="utf-8")
+    output.write_text(render_html(result), encoding="utf-8")
     typer.echo(f"Report written to {output}")
     if pdf is not None:
         write_dossier(result, pdf, load_profile(profile))
