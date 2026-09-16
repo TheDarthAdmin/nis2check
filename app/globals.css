@@ -63,3 +63,34 @@ a { color:inherit; text-decoration:none; } button { font:inherit; } h1,h2,h3 { c
 
 .footer { border-top:1px solid var(--brand); background:var(--brand); color:var(--brand-soft); }.footer .bar { flex-wrap:wrap; gap:10px 22px; min-height:0; padding-top:26px; padding-bottom:26px; font-size:12px; }.footer b { color:#fff; }.footer a { color:#fff; text-decoration:underline; }
 @media(max-width:900px){ .bar,.shell{padding-left:20px;padding-right:20px}.navlinks{gap:12px}.navlinks>a:not(.nav-button),.user-chip{display:none}.trust-strip,.home-grid{grid-template-columns:1fr}.trust-strip div,.feature-card{border-right:0;border-bottom:1px solid var(--line)}.trust-strip div:last-child,.feature-card:last-child{border-bottom:0}.home-hero{margin:0 -20px;padding:64px 20px 56px}.hero h1,.empty-state h1{font-size:28px}.compare{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.table{display:block;overflow-x:auto}.run-header{padding-top:28px}.tally{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.toolbar .field{min-width:100%}.result-count{margin-left:0}.detail-nav{grid-template-columns:1fr}.detail-nav-link{border-right:0;border-bottom:1px solid var(--line)}.align-end{align-items:flex-start;text-align:left}.summary-list div{border-right:0;border-bottom:1px solid var(--line)} }
+
+/* Scope: the classification, and the form that produces it. A classification is a fact about
+   the organisation, not a grade, so it uses the brand colour rather than the verdict palette. */
+.scope-hero { padding-bottom:8px; }
+.scope-summary { margin:0 0 18px; }
+.scope-head { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:14px; }
+.scope-badge { border:1px solid var(--brand); border-radius:var(--radius); background:var(--brand-softer); padding:6px 12px; color:var(--brand); font-size:14px; font-weight:700; letter-spacing:-.2px; }
+.scope-badge.scope-out_of_scope,.scope-badge.scope-undetermined { border-color:var(--line-strong); background:var(--tint); color:var(--muted); }
+.scope-meaning { margin:0 0 10px; color:var(--ink); font-size:15px; font-weight:500; }
+.scope-summary h3 { margin:18px 0 8px; font-size:14px; font-weight:700; }
+.scope-obligations { list-style:disc; margin:0; padding-left:20px; color:var(--body); font-size:13px; line-height:1.8; }
+.scope-obligations li::marker { color:var(--brand); }
+.scope-basis { margin-top:16px; font-size:12px; }
+.scope-form { display:flex; flex-direction:column; gap:18px; }
+.scope-field { display:flex; flex-direction:column; gap:6px; font-size:13px; }
+.scope-field > span { color:var(--ink); font-weight:600; }
+.scope-field small { font-size:12px; }
+.scope-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.scope-hint { margin:-8px 0 0; font-size:12px; line-height:1.7; }
+.scope-check { align-items:flex-start; gap:10px; color:var(--body); line-height:1.6; }
+.scope-check input { margin-top:3px; }
+.scope-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+
+/* Dossier download, beside the run actions. */
+.dossier-action { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.link-button { border:0; background:none; padding:0; color:var(--muted); font-family:var(--font); font-size:12px; text-decoration:underline; cursor:pointer; }
+.link-button:hover { color:var(--brand); }
+.link-button:disabled { cursor:wait; opacity:.55; }
+.dossier-action .error-text { flex-basis:100%; margin:4px 0 0; }
+
+@media(max-width:900px){ .scope-row { grid-template-columns:1fr; } }

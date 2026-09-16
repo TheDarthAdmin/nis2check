@@ -90,6 +90,22 @@ Graph-endpoint dat gelezen werd. Geen totaalscore, geen percentage.
 
 `--profile` is optioneel; zonder profiel vervalt het scopinghoofdstuk en blijft de rest gelijk.
 
+## In de gehoste werkruimte
+
+Dezelfde twee dingen, achter de Entra-login:
+
+- **Scope** — `/scope` stelt dezelfde vragen en bewaart het antwoord per tenant. Het profiel
+  bevat sector, personeelsbestand, omzet, balanstotaal en de twee uitzonderingsvinkjes.
+  **Geen bedrijfsnaam en geen ondernemingsnummer**: die identificeren de klant, en deze
+  database bewaart daar niets van. Een gehost dossier draagt daarom het tenant-ID als hoofding.
+- **Dossier** — elke afgeronde run heeft een downloadknop. `GET /v1/runs/{id}/dossier?format=pdf`
+  levert de PDF, `format=html` hetzelfde document als HTML.
+
+Let op bij Vercel: WeasyPrint heeft systeembibliotheken nodig die daar niet beschikbaar zijn.
+De PDF-route antwoordt dan `503` met de ontbrekende pakketten erin, en de interface biedt
+automatisch het HTML-dossier aan, dat een browser naar dezelfde pagina's afdrukt. Draait de API
+in een container of op een VM, installeer dan de pakketten hierboven en werkt de PDF wel.
+
 PDF-uitvoer vereist WeasyPrint met zijn systeembibliotheken. Op Debian of Ubuntu:
 
 ```bash

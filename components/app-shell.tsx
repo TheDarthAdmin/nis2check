@@ -7,6 +7,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     <header className="topbar"><div className="bar">
       <Link className="brand" href="/"><span className="brand-mark">N</span><span>nis2</span><span>check</span></Link>
       <div className="navlinks">
+        <Link href="/scope">Scope</Link>
         <Link href="/runs/latest">Evidence</Link>
         <Link href="/compare">Compare</Link>
         <a href="https://github.com/TheDarthAdmin/nis2check">Documentation</a>

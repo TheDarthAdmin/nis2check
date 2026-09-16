@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { DossierButton } from "@/components/dossier-button";
 import { EvidenceExplorer } from "@/components/evidence-explorer";
 import { RunNowButton } from "@/components/run-now-button";
 import { RunSwitcher } from "@/components/run-switcher";
@@ -36,6 +37,7 @@ export function RunDetail({ run, findings, runs = [] }: { run: HostedRun | null;
       </div>
       <div className="run-header-actions">
         <RunSwitcher runs={runs} currentId={run.id} />
+        {run.status === "COMPLETE" ? <DossierButton runId={run.id} /> : null}
         <RunNowButton busy={run.status === "RUNNING"} />
       </div>
     </section>

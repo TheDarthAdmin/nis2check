@@ -1,4 +1,4 @@
-import { ComparisonFinding, HostedFinding, HostedRun, TenantStatus } from "@/lib/types";
+import { ComparisonFinding, HostedFinding, HostedRun, ScopingDeclaration, SectorOption, TenantProfile, TenantStatus } from "@/lib/types";
 
 /** Why a hosted call failed, so the interface can say something more useful than "try again". */
 export type HostedApiFailure = "unconfigured" | "unreachable" | "rejected";
@@ -68,6 +68,53 @@ export async function getComparison(tenantId: string, leftRunId: string, rightRu
 
 export async function startHostedRun(tenantId: string): Promise<HostedRun> {
   return request<HostedRun>("/v1/runs", tenantId, { method: "POST" });
+}
+
+export async function getSectors(): Promise<SectorOption[]> {
+  return (await request<{ sectors: SectorOption[] }>("/v1/sectors")).sectors;
+}
+
+export async function getTenantProfile(tenantId: string): Promise<TenantProfile> {
+  return request<TenantProfile>("/v1/profile", tenantId);
+}
+
+export async function saveTenantProfile(tenantId: string, declared: Partial<ScopingDeclaration>): Promise<TenantProfile> {
+  return request<TenantProfile>("/v1/profile", tenantId, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sector_key: declared.sectorKey,
+      employees: declared.employees ?? null,
+      annual_turnover_eur: declared.annualTurnoverEur ?? null,
+      balance_sheet_total_eur: declared.balanceSheetTotalEur ?? null,
+      sole_provider: declared.soleProvider ?? false,
+      critical_entity_cer: declared.criticalEntityCer ?? false,
+      designated_as: declared.designatedAs ?? null,
+    }),
+  });
+}
+
+/**
+ * The dossier is a file, not JSON, so this returns the raw response for the route to stream on.
+ * A deployment without WeasyPrint's system libraries answers 503 for pdf and still serves html.
+ */
+export async function fetchDossier(tenantId: string, runId: string, format: "pdf" | "html"): Promise<Response> {
+  const { baseUrl, apiKey } = getHostedApiConfig();
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/v1/runs/${encodeURIComponent(runId)}/dossier?format=${format}`, {
+      headers: { "X-Nis2check-Api-Key": apiKey, "X-Nis2check-Tenant-Id": tenantId },
+      cache: "no-store",
+    });
+  } catch {
+    throw new HostedApiError("The collection service did not answer.", "unreachable");
+  }
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { detail?: unknown } | null;
+    const detail = typeof payload?.detail === "string" ? payload.detail : `The dossier could not be built (${response.status}).`;
+    throw new HostedApiError(detail, "rejected", response.status);
+  }
+  return response;
 }
 
 export async function startScheduledRuns(): Promise<{ started: number; skipped: number; failed: number }> {

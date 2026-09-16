@@ -1,5 +1,43 @@
 export type Verdict = "PASS" | "PARTIAL" | "FAIL" | "NOT_APPLICABLE" | "INCONCLUSIVE";
 
+/** Scoping answers a different question than a verdict does, so it has its own outcomes. */
+export type Classification = "ESSENTIAL" | "IMPORTANT" | "OUT_OF_SCOPE" | "UNDETERMINED";
+
+export type SizeClass = "MICRO" | "SMALL" | "MEDIUM" | "LARGE" | "UNDETERMINED";
+
+export type SectorOption = {
+  key: string;
+  annex: string;
+  annexPoint: string;
+  sector: string;
+  subsector: string;
+};
+
+export type ScopingResult = {
+  classification: Classification;
+  size: SizeClass;
+  /** Whether the directive applies at all. null when the declared figures do not settle it. */
+  inScope: boolean | null;
+  rationale: string;
+  legalBasis: string[];
+  supervision: string[];
+  sector: SectorOption | null;
+};
+
+/** What the organisation declared about itself. Never collected, never read from Graph. */
+export type ScopingDeclaration = {
+  sectorKey: string;
+  employees: number | null;
+  annualTurnoverEur: number | null;
+  balanceSheetTotalEur: number | null;
+  soleProvider: boolean;
+  criticalEntityCer: boolean;
+  designatedAs: Classification | null;
+  updatedAt: string | null;
+};
+
+export type TenantProfile = { declared: ScopingDeclaration | null; scoping: ScopingResult | null };
+
 export type TenantStatus = {
   tenantId: string;
   consentGranted: boolean;

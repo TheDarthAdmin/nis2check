@@ -110,7 +110,7 @@ async def read_sectors() -> dict[str, object]:
     return {"sectors": sector_options()}
 
 
-@app.get("/v1/tenants/{tenant_id}/profile", dependencies=[Depends(authorize)])
+@app.get("/v1/profile", dependencies=[Depends(authorize)])
 async def read_profile(
     database_session: Annotated[AsyncSession, Depends(session)],
     tenant: Annotated[Tenant, Depends(tenant_context)],
@@ -118,7 +118,7 @@ async def read_profile(
     return profile_view(await get_profile(database_session, tenant))
 
 
-@app.put("/v1/tenants/{tenant_id}/profile", dependencies=[Depends(authorize)])
+@app.put("/v1/profile", dependencies=[Depends(authorize)])
 async def write_profile(
     database_session: Annotated[AsyncSession, Depends(session)],
     tenant: Annotated[Tenant, Depends(tenant_context)],

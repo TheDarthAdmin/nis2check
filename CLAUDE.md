@@ -16,7 +16,7 @@ Het verzamelt technisch bewijs voor NIS2 artikel 21 via Microsoft Graph. Het lev
 4. **Geen totaalscore.** Een percentage nodigt uit tot cijferjagen. Bewust weggelaten.
 5. **Ruwe data en interpretatie gescheiden.** `raw_evidence` bevat wat Graph zei, `rationale` wat wij ervan maken. Nooit door elkaar.
 6. **Controls zijn data.** Metadata in YAML, evaluatie in een geregistreerde Python-handler.
-7. **Geen klantdata, nergens.** Niet in de repo, niet in tests, niet in logs. Testdata is altijd fixture-data. De hosted database slaat geen UPN's of e-mailadressen op.
+7. **Geen klantdata, nergens.** Niet in de repo, niet in tests, niet in logs. Testdata is altijd fixture-data. De hosted database slaat geen UPN's of e-mailadressen op, en ook geen bedrijfsnaam of ondernemingsnummer: `tenant_profiles` bevat sector en cijfers, meer niet.
 8. **De CLI werkt zonder de rest.** `pip install nis2check && nis2check run` volstaat: geen database, geen account, geen verbinding met ons. Dat geldt ook voor optionele extra's: ontbreekt WeasyPrint, dan werkt alles behalve `--pdf`, en dat zegt dan waarom.
 9. **Scoping is geen bewijs.** `packages/scoping` werkt op wat de organisatie zelf verklaart en wordt nooit een `Finding`. Het beantwoordt of de richtlijn van toepassing is; de controls beantwoorden wat de tenant kan tonen. Die twee door elkaar halen is hetzelfde soort fout als regel 5.
 
@@ -26,6 +26,7 @@ Het verzamelt technisch bewijs voor NIS2 artikel 21 via Microsoft Graph. Het lev
 packages/collector/   auth, graph-client, engine, handlers, rapportage
 packages/catalog/     controls/*.yaml + schema.json + artikel 21(2)-maatregelen
 packages/scoping/     sectors.yaml + classificatie essentieel/belangrijk/buiten scope
+packages/reporting/   HTML-rapport en PDF-dossier, gedeeld door CLI en API
 apps/cli/             Typer-CLI, HTML/JSON/PDF-uitvoer, Dockerfile
 apps/api/             FastAPI, SQLAlchemy, Alembic, arq
 apps/web/             Next.js
@@ -53,4 +54,6 @@ waarbij `UNDETERMINED` om dezelfde reden bestaat.
 - Eén commit per afgerond controleblok, met groene tests.
 - `ruff check` en `mypy --strict` zijn onderdeel van done, niet van later.
 - Bij twijfel over scope: vraag het, bouw niet vooruit.
-- Raak `apps/api` en `apps/web` niet aan tot fase 3.
+- Fase 3 is open: `apps/api` en `apps/web` mogen mee-evolueren. Renderen hoort in
+  `packages/reporting`, niet in een van beide voordeuren.
+- Web: `pnpm exec tsc --noEmit` en `pnpm exec next build` zijn onderdeel van done.
